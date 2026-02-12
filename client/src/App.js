@@ -1,16 +1,13 @@
+import { BrowserRouter } from 'react-router-dom';
+import AppRoutes from './app/AppRoutes';
+import { AuthProvider } from './app/auth';
 
-import './index.css';
-
-function App() {
+export default function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <p>
-          This is going to be Ol' Time Muscle, a pure Muscle Car site to show off cool rides in your area
-        </p>
-      </header>
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
-
-export default App;
