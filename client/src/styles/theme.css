@@ -1,64 +1,96 @@
+/* theme.css */
+
 :root {
+  /* Core */
   --bg0: #07070a;
   --bg1: #0b0b12;
-  --chromeA: rgba(255, 255, 255, 0.1);
-  --chromeB: rgba(255, 255, 255, 0.06);
-  --stroke: rgba(255, 255, 255, 0.18);
-  --glow: rgba(183, 255, 255, 0.25);
-  --hot: rgba(160, 90, 255, 0.35);
-  --text: rgba(255, 255, 255, 0.92);
-  --muted: rgba(255, 255, 255, 0.65);
+
+  /* Chrome system (converted from rgba → hex w/ alpha) */
+  --chromeA: #ffffff1a; /* rgba(255,255,255,0.10) */
+  --chromeB: #ffffff0f; /* rgba(255,255,255,0.06) */
+  --stroke: #ffffff2e; /* rgba(255,255,255,0.18) */
+  --glow: #b7ffff40; /* rgba(183,255,255,0.25) */
+  --hot: #a05aff59; /* rgba(160,90,255,0.35) */
+
+  --text: #ffffffeb; /* rgba(255,255,255,0.92) */
+  --muted: #ffffffa6; /* rgba(255,255,255,0.65) */
   --danger: #ff3b6b;
+
+  --brandW: 140px;
+
+  /* Responsive spacing */
+  --pad: 12px; /* mobile default */
+  --gap: 12px; /* mobile default */
+
+  /* Reusable alpha tokens (avoids random rgba everywhere) */
+  --w02: #ffffff05; /* 0.02 */
+  --w03: #ffffff09; /* 0.035 */
+  --w04: #ffffff0a; /* 0.04 */
+  --w05: #ffffff0d; /* 0.05 */
+  --w06: #ffffff0f; /* 0.06 */
+  --w08: #ffffff14; /* 0.08 */
+  --w10: #ffffff1a; /* 0.10 */
+  --w12: #ffffff1f; /* 0.12 */
+  --w14: #ffffff24; /* 0.14 */
+  --w15: #ffffff26; /* 0.15 */
+  --w18: #ffffff2e; /* 0.18 */
+  --w20: #ffffff33; /* 0.20 */
+
+  --c06: #00ffff0f; /* cyan 0.06 */
+  --c08: #00ffff14; /* cyan 0.08 */
+  --c10: #00ffff1a; /* cyan 0.10 */
+  --c12: #00ffff1f; /* cyan 0.12 */
+  --c14: #00ffff24; /* cyan 0.14 */
+  --c25: #00ffff40; /* cyan 0.25 */
+
+  --ink45: #00000073; /* black 0.45 */
+  --ink55: #0000008c; /* black 0.55 */
 }
+
+/* =========================
+   Base Reset
+   ========================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* =========================
+   Base
+   ========================= */
 
 body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+
   background:
-    radial-gradient(900px 500px at 12% 18%, rgba(0, 255, 255, 0.1), transparent 55%),
-    radial-gradient(900px 500px at 82% 22%, rgba(160, 90, 255, 0.12), transparent 55%),
-    radial-gradient(900px 700px at 50% 90%, rgba(255, 255, 255, 0.06), transparent 55%),
+    radial-gradient(900px 500px at 12% 18%, #4f0301, transparent 55%),
+    radial-gradient(900px 500px at 80% 50%, #646466, transparent 42%),
+    radial-gradient(900px 700px at 50% 90%, #fbfbfb, transparent 23%),
     linear-gradient(180deg, var(--bg0), var(--bg1));
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: cover;
+
   color: var(--text);
+  margin: 0;
+  min-height: 100vh;
 }
 
-/* Staggered corners = looks more “cut metal” than bubble UI */
-.chrome-card {
-  background: linear-gradient(180deg, var(--chromeA), var(--chromeB));
-  border: 1px solid var(--stroke);
-  border-radius: 22px 8px 22px 8px;
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(14px);
-}
+/* =========================
+   Utilities
+   ========================= */
 
-.chrome-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 22px 8px 22px 8px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.14),
-    transparent 35%,
-    rgba(0, 255, 255, 0.08)
-  );
-  pointer-events: none;
-  mask: linear-gradient(#000, transparent 65%);
-}
-
-.chrome-btn {
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 14px 6px 14px 6px;
-  padding: 10px 14px;
-  color: var(--text);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-}
-
-.chrome-btn:hover {
-  box-shadow:
-    0 12px 38px rgba(0, 0, 0, 0.55),
-    0 0 0 2px rgba(0, 255, 255, 0.1);
+.muted {
+  color: var(--muted);
 }
 
 .field-error {
@@ -66,4 +98,494 @@ body {
   font-size: 12px;
   margin-left: 10px;
   white-space: nowrap;
+}
+
+/* =========================
+   Chrome Card Base
+   ========================= */
+
+.chrome-card {
+  background: linear-gradient(180deg, var(--chromeA), var(--chromeB));
+  border: 1px solid var(--stroke);
+  border-radius: 22px 8px 22px 8px;
+  box-shadow:
+    0 12px 40px var(--ink55),
+    inset 0 1px 0 var(--w08);
+  backdrop-filter: blur(14px);
+  position: relative;
+  overflow: hidden;
+}
+
+.chrome-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 22px 8px 22px 8px;
+  background: linear-gradient(135deg, var(--w14), transparent 35%, var(--c08));
+  pointer-events: none;
+  mask: linear-gradient(#000000, transparent 65%);
+}
+
+/* Full rounded overrides */
+.login-card {
+  width: min(420px, 100%);
+  padding: 32px 24px 28px 32px;
+  border-radius: 22px !important;
+}
+
+.login-card::before {
+  border-radius: 22px !important;
+}
+
+.panel-card {
+  border-radius: 22px !important;
+}
+
+.panel-card::before {
+  border-radius: 22px !important;
+}
+
+/* =========================
+   Buttons
+   ========================= */
+
+.chrome-btn {
+  border: 1px solid var(--w20);
+  border-radius: 14px;
+  padding: 10px 14px;
+
+  color: var(--text);
+  background: linear-gradient(180deg, var(--w12), var(--w06));
+  box-shadow: 0 10px 30px var(--ink45);
+
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.chrome-btn:hover {
+  box-shadow:
+    0 12px 38px var(--ink55),
+    0 0 0 2px var(--c10);
+}
+
+.chrome-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* =========================
+   Login Page
+   ========================= */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-brandTitle {
+  display: block;
+  text-align: center;
+  margin: 0 0 10px;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.login-brandWrap {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.login-brand {
+  width: var(--brandW);
+  height: auto;
+  opacity: 0.95;
+  display: inline-block;
+}
+
+.login-title {
+  margin: 0 0 16px;
+}
+
+.login-form {
+  display: grid;
+  gap: 10px;
+}
+
+.login-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.login-input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+
+  border: 1px solid var(--w15);
+  background: var(--w05);
+  color: var(--text);
+
+  outline: none;
+}
+
+.login-input:focus {
+  border-color: #4f0301; /* keep your existing # color */
+  box-shadow: 0 0 0 2px var(--c08);
+}
+
+/* Autofill fix */
+.login-input:-webkit-autofill,
+.login-input:-webkit-autofill:hover,
+.login-input:-webkit-autofill:focus,
+.login-input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text) !important;
+  caret-color: var(--text);
+  transition: background-color 999999s ease-out 0s;
+  -webkit-box-shadow: 0 0 0px 1000px var(--w05) inset !important;
+  box-shadow: 0 0 0px 1000px var(--w05) inset !important;
+  border: 1px solid var(--w15);
+}
+
+.login-btn {
+  width: var(--brandW);
+  margin: 12px auto 0;
+  display: block;
+}
+
+/* =========================
+   Chrome Select (dropdown)
+   ========================= */
+
+.chrome-select {
+  width: 100%;
+  padding: 10px 42px 10px 12px;
+  border-radius: 12px;
+
+  border: 1px solid var(--w15);
+  background: var(--w05);
+  color: var(--text);
+
+  outline: none;
+
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  /* custom arrow */
+  background-image:
+    linear-gradient(180deg, var(--w06), var(--w02)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24'%3E%3Cpath fill='%23DCFFFFD9' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position:
+    0 0,
+    right 12px center;
+  background-size:
+    auto,
+    18px 18px;
+}
+
+.chrome-select:focus {
+  border-color: #4f0301; /* keep your existing # color */
+  box-shadow: 0 0 0 2px var(--c08);
+}
+
+/* best-effort option styling (browser support varies) */
+.chrome-select option {
+  background: #0b0b12;
+  color: var(--text);
+}
+
+/* =========================
+   Chrome Input (matches chrome-select)
+   ========================= */
+
+.chrome-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+
+  border: 1px solid var(--w15);
+  background: var(--w05);
+  color: var(--text);
+
+  outline: none;
+}
+
+.chrome-input:focus {
+  border-color: #4f0301;
+  box-shadow: 0 0 0 2px var(--c08);
+}
+
+.chrome-input::placeholder {
+  color: var(--muted);
+}
+
+/* =========================
+   Password Toggle
+   ========================= */
+
+.password-field {
+  position: relative;
+}
+
+.password-input {
+  padding-right: 48px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+
+  height: 30px;
+  width: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid var(--w12);
+  border-radius: 10px;
+  background: var(--w04);
+  color: var(--muted);
+
+  cursor: pointer;
+  padding: 0;
+  line-height: 0;
+}
+
+.password-toggle:hover {
+  color: var(--text);
+  box-shadow: 0 0 0 2px var(--c08);
+}
+
+.password-toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c12);
+}
+
+.password-eye {
+  display: block;
+}
+
+/* =========================
+   Layout (Mobile-first)
+   ========================= */
+
+/* FULL WIDTH APP SHELL (no centering) */
+.app-shell {
+  padding: var(--pad);
+  display: grid;
+  gap: var(--gap);
+
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+/* optional inner wrapper if you ever want constraints later */
+.app-inner {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.app-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  align-items: stretch;
+  min-width: 0;
+}
+
+.sidebar {
+  width: 100%;
+  padding: 14px;
+  min-width: 0;
+}
+
+.content-area {
+  flex: 1;
+  padding: 0;
+  min-width: 0;
+}
+
+/* =========================
+   TopBar (Mobile-first)
+   ========================= */
+
+.topbar {
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.topbar-brand {
+  width: 42px;
+  opacity: 0.95;
+  flex: 0 0 auto;
+}
+
+.topbar-meta {
+  min-width: 0;
+}
+
+.topbar-title {
+  font-weight: 700;
+}
+
+.topbar-sub {
+  font-size: 12px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60vw;
+}
+
+.topbar-logout {
+  flex: 0 0 auto;
+}
+
+/* =========================
+   Sidebar (polished)
+   ========================= */
+
+.sidebar-nav {
+  display: grid;
+  gap: 10px;
+}
+
+.sidebar-link {
+  text-decoration: none;
+  text-align: center;
+  opacity: 0.9;
+}
+
+.sidebar-link.is-active {
+  opacity: 1;
+}
+
+.sidebar-tip {
+  margin-top: 14px;
+  padding: 10px;
+  border-radius: 12px;
+
+  border: 1px solid var(--w14);
+  background: var(--w03);
+  color: var(--muted);
+
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.sidebar-tipLabel {
+  display: inline-block;
+  margin-right: 6px;
+
+  padding: 2px 8px;
+  border-radius: 999px;
+
+  border: 1px solid var(--c14);
+  background: var(--c06);
+  color: #dcffffe6; /* rgba(220,255,255,0.90) */
+
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidebar-tipText {
+  display: inline;
+}
+
+/* mobile: make sidebar buttons feel like a real nav */
+@media (max-width: 420px) {
+  .sidebar-nav {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .sidebar-tip {
+    border-radius: 14px;
+  }
+
+  .login-page {
+    padding: 14px;
+  }
+}
+
+/* =========================
+   Detail header row
+   ========================= */
+
+.detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detail-title {
+  margin: 0;
+}
+
+/* =========================
+   Tablet / Desktop Enhancements
+   ========================= */
+
+@media (min-width: 768px) {
+  :root {
+    --pad: 18px;
+    --gap: 14px;
+  }
+
+  .app-row {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  /* Sidebar hugs the left more (app feel) */
+  .sidebar {
+    width: 240px;
+    flex: 0 0 240px;
+    position: sticky;
+    top: 18px;
+    align-self: flex-start;
+  }
+
+  .topbar-sub {
+    max-width: 520px;
+  }
+}
+
+@media (min-width: 1100px) {
+  :root {
+    --pad: 22px;
+  }
+
+  /* make the whole app feel wider on desktop */
+  .sidebar {
+    width: 260px;
+    flex-basis: 260px;
+  }
 }

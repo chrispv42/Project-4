@@ -1,6 +1,6 @@
 -- schema.sql
-CREATE DATABASE IF NOT EXISTS oltimemuscle;
-USE oltimemuscle;
+CREATE DATABASE IF NOT EXISTS ol_time_muscle;
+USE ol_time_muscle;
 
 -- Users
 CREATE TABLE IF NOT EXISTS users (
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS categories (
   sort_order INT NOT NULL DEFAULT 0
 );
 
--- Vehicles (catalog / “questions” feed lives off this)
+-- Vehicles (catalog)
 CREATE TABLE IF NOT EXISTS vehicles (
   id INT AUTO_INCREMENT PRIMARY KEY,
   category_id INT NOT NULL,
@@ -31,10 +31,11 @@ CREATE TABLE IF NOT EXISTS vehicles (
   image_url VARCHAR(500) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
-  INDEX idx_vehicles_category_created (category_id, created_at)
+  INDEX idx_vehicles_category_created (category_id, created_at),
+  INDEX idx_vehicles_make_model_year (make, model, year)
 );
 
--- Threads / “questions” about a vehicle
+-- Threads / “questions” about a vehicle (optional / legacy if you keep it)
 CREATE TABLE IF NOT EXISTS questions (
   id INT AUTO_INCREMENT PRIMARY KEY,
   vehicle_id INT NOT NULL,
@@ -47,7 +48,7 @@ CREATE TABLE IF NOT EXISTS questions (
   INDEX idx_questions_vehicle_created (vehicle_id, created_at)
 );
 
--- Answers / comments
+-- Answers (optional / legacy if you keep it)
 CREATE TABLE IF NOT EXISTS answers (
   id INT AUTO_INCREMENT PRIMARY KEY,
   question_id INT NOT NULL,
@@ -57,6 +58,22 @@ CREATE TABLE IF NOT EXISTS answers (
   FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_answers_question_created (question_id, created_at)
+);
+
+-- ✅ Comments (Vehicle threads) + ✅ Replies (parent_comment_id)
+CREATE TABLE IF NOT EXISTS comments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  vehicle_id INT NOT NULL,
+  user_id INT NOT NULL,
+  parent_comment_id INT DEFAULT NULL,
+  body TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (parent_comment_id) REFERENCES comments(id) ON DELETE CASCADE,
+  INDEX idx_comments_vehicle_created (vehicle_id, created_at),
+  INDEX idx_comments_parent_created (parent_comment_id, created_at),
+  INDEX idx_comments_user_created (user_id, created_at)
 );
 
 -- User Garage (profile “my rides”)
