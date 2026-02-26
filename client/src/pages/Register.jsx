@@ -1,9 +1,10 @@
+// client/src/pages/Register.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import FieldError from '../components/fieldError';
 
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:4000/signup';
+const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:4000';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -51,10 +52,17 @@ export default function Register() {
   return (
     <div className="login-page">
       <div className="chrome-card login-card">
-        <h className="login-brandTitle">Ol&apos; Time Muscle</h>
+        <h2 className="login-brandTitle">Ol&apos; Time Muscle</h2>
 
         <div className="login-brandWrap">
-          <img className="login-brand" src="/brandMark.png" alt="Brand Mark" />
+          <img
+            className="login-brand"
+            src={`${process.env.PUBLIC_URL}/brandMark.png`}
+            alt="Brand Mark"
+            onError={(e) => {
+              e.currentTarget.src = '/brandMark.png';
+            }}
+          />
         </div>
 
         <h1 className="login-title">Register</h1>

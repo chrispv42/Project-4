@@ -1,7 +1,7 @@
 // client/src/pages/Login.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:4000';
 
@@ -37,11 +37,18 @@ export default function Login() {
   return (
     <div className="login-page">
       <div className="chrome-card login-card">
-        {/* ✅ <h> is not a valid HTML tag; keep your styling, use h2 */}
         <h2 className="login-brandTitle">Ol&apos; Time Muscle</h2>
 
         <div className="login-brandWrap">
-          <img className="login-brand" src="/brandMark.png" alt="Brand Mark" />
+          <img
+            className="login-brand"
+            src={`${process.env.PUBLIC_URL}/brandMark.png`}
+            alt="Brand Mark"
+            onError={(e) => {
+              // Fallback for weird deploy bases
+              e.currentTarget.src = '/brandMark.png';
+            }}
+          />
         </div>
 
         <h1 className="login-title">Login</h1>
@@ -101,6 +108,10 @@ export default function Login() {
           <button disabled={isSubmitting} type="submit" className="chrome-btn login-btn">
             {isSubmitting ? 'Logging in...' : 'Login'}
           </button>
+
+          <div style={{ marginTop: 12, textAlign: 'center', fontSize: 12, color: 'var(--muted)' }}>
+            Not registered yet? <Link to="/register">Signup</Link>
+          </div>
         </form>
       </div>
     </div>

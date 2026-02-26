@@ -586,7 +586,7 @@ body {
 .thread-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   padding: 16px;
   border-radius: 18px;
   border: 1px solid var(--w14);
@@ -621,6 +621,8 @@ body {
 .thread-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
 }
 
 .thread-submit {
@@ -629,13 +631,20 @@ body {
 
 .thread-list {
   display: grid;
-  gap: 14px;
-  margin-top: 6px;
+  gap: 16px;
+  margin-top: 8px;
 }
 
 .thread-item {
-  padding: 14px 16px;
+  padding: 16px 18px;
   border-radius: 18px !important;
+}
+
+.thread-item--reply {
+  border-color: var(--w12);
+  box-shadow:
+    0 10px 30px var(--ink45),
+    inset 0 1px 0 var(--w06);
 }
 
 .thread-head {
@@ -643,7 +652,7 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .thread-user {
@@ -655,7 +664,59 @@ body {
 }
 
 .thread-body {
-  line-height: 1.5;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  margin-top: 2px;
+  margin-bottom: 10px; /* space before footer/actions */
+}
+
+.thread-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.thread-replyBtn {
+  border: 1px solid var(--w18);
+  background: linear-gradient(180deg, var(--w08), var(--w04));
+  color: var(--text);
+  border-radius: 12px;
+  padding: 7px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 10px 26px var(--ink45);
+}
+
+.thread-replyBtn:hover {
+  box-shadow:
+    0 12px 32px var(--ink55),
+    0 0 0 2px var(--c10);
+}
+
+.thread-replyCount {
+  font-size: 12px;
+}
+
+.thread-replyComposer {
+  margin-top: 12px; /* space between Reply/Cancel and composer */
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--w14);
+  background: linear-gradient(180deg, var(--w05), var(--w03));
+}
+
+.thread-textarea--reply {
+  min-height: 64px;
+}
+
+.thread-replies {
+  margin-top: 14px; /* space between parent and its children */
+  display: grid;
+  gap: 14px; /* space between child replies */
 }
 
 .thread-empty {
