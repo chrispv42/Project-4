@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "proxy": "http://localhost:4000",
+  "homepage": "https://chrispv42.github.io/Project-4",
   "dependencies": {
     "axios": "^1.13.5",
     "react": "^19.2.4",
@@ -13,7 +14,9 @@
   "scripts": {
     "dev": "npm run dev",
     "start": "react-scripts start",
-    "build": "react-scripts build"
+    "build": "react-scripts build",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [
@@ -36,5 +39,8 @@
   "overrides": {
     "nth-check": "^2.1.1",
     "postcss": "^8.4.31"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
   }
 }

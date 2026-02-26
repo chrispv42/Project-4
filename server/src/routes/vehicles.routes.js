@@ -2,6 +2,9 @@
 import { Router } from 'express';
 import { pool } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const router = Router();
 
@@ -15,6 +18,59 @@ function cleanStr(v, max = 255) {
   if (!s) return '';
   return s.length > max ? s.slice(0, max) : s;
 }
+
+function isHttpUrl(s) {
+  try {
+    const u = new URL(s);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/* ============================
+   Uploads (multer)
+   ============================ */
+
+const storage = multer.diskStorage({
+  destination: (req, _file, cb) => {
+    const vehicleId = String(req.params.id || 'unknown');
+    const dir = path.join(process.cwd(), 'uploads', 'vehicles', vehicleId);
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const safeExt = ext && ext.length <= 10 ? ext : '';
+    const base = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    cb(null, `${base}${safeExt}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 8 * 1024 * 1024 }, // 8MB
+  fileFilter: (_req, file, cb) => {
+    const ok = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'image/avif',
+      'image/bmp',
+      'image/tiff',
+      'image/svg+xml',
+    ].includes(file.mimetype);
+
+    if (!ok) return cb(new Error('Only image files are allowed.'));
+    cb(null, true);
+  },
+});
+
+/* ============================
+   Routes
+   ============================ */
 
 // GET /api/vehicles/by-era/:eraId
 router.get('/by-era/:eraId', async (req, res) => {
@@ -133,19 +189,7 @@ router.post('/', requireAuth, async (req, res) => {
       `INSERT INTO vehicles
         (user_id, era_id, year, make, model, trim, engine, horsepower, transmission, color, notes)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        req.user.id,
-        eraId,
-        year,
-        make,
-        model,
-        trim,
-        engine,
-        horsepower,
-        transmission,
-        color,
-        notes,
-      ]
+      [req.user.id, eraId, year, make, model, trim, engine, horsepower, transmission, color, notes]
     );
 
     res.json({ id: result.insertId });
@@ -168,13 +212,13 @@ router.post('/:id/photos', requireAuth, async (req, res) => {
   const caption = cleanStr(req.body?.caption, 255) || null;
 
   if (!url) return res.status(400).json({ error: 'url required' });
+  if (!isHttpUrl(url)) return res.status(400).json({ error: 'url must be http(s)' });
 
   try {
     // only allow owner to attach photos (simple rule)
-    const [vRows] = await pool.execute(
-      `SELECT id, user_id FROM vehicles WHERE id = ? LIMIT 1`,
-      [vehicleId]
-    );
+    const [vRows] = await pool.execute(`SELECT id, user_id FROM vehicles WHERE id = ? LIMIT 1`, [
+      vehicleId,
+    ]);
     const v = vRows?.[0];
     if (!v) return res.status(404).json({ error: 'Vehicle not found' });
     if (Number(v.user_id) !== Number(req.user.id))
@@ -186,10 +230,50 @@ router.post('/:id/photos', requireAuth, async (req, res) => {
       [vehicleId, url, caption]
     );
 
-    res.json({ id: result.insertId });
+    res.json({ id: result.insertId, url });
   } catch (err) {
     console.error('POST /api/vehicles/:id/photos failed:', err);
     res.status(500).json({ error: 'Failed to add photo' });
+  }
+});
+
+/**
+ * POST /api/vehicles/:id/photos/upload
+ * Multipart upload endpoint (auth required)
+ * FormData:
+ *  - file (image/*)
+ *  - caption? (string)
+ */
+router.post('/:id/photos/upload', requireAuth, upload.single('file'), async (req, res) => {
+  const vehicleId = Number(req.params.id);
+  if (!Number.isFinite(vehicleId)) return res.status(400).json({ error: 'Invalid vehicle id' });
+  if (!req.file) return res.status(400).json({ error: 'file required' });
+
+  const caption = cleanStr(req.body?.caption, 255) || null;
+
+  try {
+    // only allow owner to attach photos (simple rule)
+    const [vRows] = await pool.execute(`SELECT id, user_id FROM vehicles WHERE id = ? LIMIT 1`, [
+      vehicleId,
+    ]);
+    const v = vRows?.[0];
+    if (!v) return res.status(404).json({ error: 'Vehicle not found' });
+    if (Number(v.user_id) !== Number(req.user.id))
+      return res.status(403).json({ error: 'Not allowed' });
+
+    // public URL served by server/src/index.js
+    const publicUrl = `/uploads/vehicles/${vehicleId}/${req.file.filename}`;
+
+    const [result] = await pool.execute(
+      `INSERT INTO vehicle_photos (vehicle_id, url, caption)
+       VALUES (?, ?, ?)`,
+      [vehicleId, publicUrl, caption]
+    );
+
+    res.json({ id: result.insertId, url: publicUrl });
+  } catch (err) {
+    console.error('POST /api/vehicles/:id/photos/upload failed:', err);
+    res.status(500).json({ error: 'Failed to upload photo' });
   }
 });
 

@@ -6,6 +6,8 @@ import SideBar from '../components/SideBar';
 import ChromeCard from '../components/ChromeCard';
 import { api } from '../app/api';
 
+const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:4000';
+
 export default function VehicleDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -67,6 +69,12 @@ export default function VehicleDetail() {
     return parts.length ? parts.join(' ') : `Vehicle #${id}`;
   }, [vehicle, id]);
 
+  function resolveImg(url) {
+    if (!url) return '';
+    if (url.startsWith('/')) return `${API_BASE}${url}`;
+    return url;
+  }
+
   async function refreshComments() {
     const c = await api(`/api/comments/by-vehicle/${id}`);
     setComments(Array.isArray(c) ? c : []);
@@ -96,6 +104,8 @@ export default function VehicleDetail() {
       setPosting(false);
     }
   }
+
+  const img = resolveImg(vehicle?.image_url);
 
   return (
     <div className="app-shell">
@@ -150,9 +160,7 @@ export default function VehicleDetail() {
                     </div>
                   </div>
 
-                  {vehicle.image_url ? (
-                    <img className="vehicle-image" src={vehicle.image_url} alt={title} />
-                  ) : null}
+                  {img ? <img className="vehicle-image" src={img} alt={title} /> : null}
                 </div>
 
                 {/* Comments thread */}
@@ -165,10 +173,23 @@ export default function VehicleDetail() {
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       placeholder="Leave a comment…"
+                      rows={3}
                     />
-                    <button className="chrome-btn thread-submit" type="submit" disabled={posting}>
-                      {posting ? 'Posting…' : 'Post Comment'}
-                    </button>
+
+                    <div className="thread-actions">
+                      <button
+                        className="chrome-btn thread-submit"
+                        type="submit"
+                        disabled={posting || newComment.trim().length < 2}
+                        title={
+                          newComment.trim().length < 2
+                            ? 'Comment must be at least 2 characters'
+                            : 'Post comment'
+                        }
+                      >
+                        {posting ? 'Posting…' : 'Post Comment'}
+                      </button>
+                    </div>
                   </form>
 
                   <div className="thread-list">

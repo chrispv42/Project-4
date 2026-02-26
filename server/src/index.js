@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import 'dotenv/config';
+import path from 'path';
+import fs from 'fs';
 
 import { testDB } from './db.js';
 
@@ -18,10 +20,10 @@ const app = express();
 const PORT = Number(process.env.PORT || 4000);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:3000';
 
-// ✅ cookies must be parsed before routes that read req.cookies
+// cookies must be parsed before routes that read req.cookies
 app.use(cookieParser());
 
-// ✅ CORS (must allow credentials because client uses withCredentials:true)
+// CORS (must allow credentials because client uses withCredentials:true)
 const corsConfig = {
   origin: CLIENT_ORIGIN,
   credentials: true,
@@ -31,10 +33,19 @@ const corsConfig = {
 
 app.use(cors(corsConfig));
 
-// ✅ Preflight
+// Preflight
 app.options(/.*/, cors(corsConfig));
 
 app.use(express.json());
+
+/**
+ * ✅ Serve uploaded files
+ * Multer saves into: <server working dir>/uploads/vehicles/:id/...
+ * Public URL: http://localhost:4000/uploads/vehicles/:id/<filename>
+ */
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(uploadsDir));
 
 // quick sanity checks
 app.get('/api/health', (_req, res) => {
@@ -71,6 +82,7 @@ app.use('/api/categories', categoriesRoutes);
 app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log('CLIENT_ORIGIN:', CLIENT_ORIGIN);
+  console.log('Uploads served from:', uploadsDir);
   console.log('DB_HOST:', process.env.DB_HOST);
   console.log('DB_PORT:', process.env.DB_PORT);
   console.log('DB_USER:', process.env.DB_USER);

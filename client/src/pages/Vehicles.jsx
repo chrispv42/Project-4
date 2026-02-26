@@ -1,9 +1,12 @@
+// client/src/pages/Vehicles.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import TopBar from '../components/TopBar';
 import SideBar from '../components/SideBar';
 import ChromeCard from '../components/ChromeCard';
 import { api } from '../app/api';
+
+const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:4000';
 
 export default function Vehicles() {
   const navigate = useNavigate();
@@ -141,6 +144,12 @@ export default function Vehicles() {
     [eras, selectedEraId]
   );
 
+  function resolveImg(url) {
+    if (!url) return '';
+    if (url.startsWith('/')) return `${API_BASE}${url}`;
+    return url;
+  }
+
   return (
     <div className="app-shell">
       <TopBar title="Vehicles" user={me} />
@@ -206,6 +215,7 @@ export default function Vehicles() {
 
                 {selectedEra ? (
                   <div className="muted" style={{ fontSize: 12, lineHeight: 1.35 }}>
+                    Now Searching: <span style={{ color: 'var(--text)' }}>{selectedEra.name}</span>
                   </div>
                 ) : null}
               </div>
@@ -256,6 +266,8 @@ export default function Vehicles() {
                 >
                   {filteredVehicles.map((v) => {
                     const name = [v.year, v.make, v.model, v.trim].filter(Boolean).join(' ');
+                    const img = resolveImg(v.image_url);
+
                     return (
                       <Link
                         key={v.id}
@@ -277,9 +289,9 @@ export default function Vehicles() {
                           </div>
                         </div>
 
-                        {v.image_url ? (
+                        {img ? (
                           <img
-                            src={v.image_url}
+                            src={img}
                             alt={name}
                             style={{
                               width: '100%',

@@ -1,54 +1,108 @@
+// server/src/routes/auth.routes.js
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { pool } from '../db.js';
+import { dbExecute } from '../db.js';
+import { getAuthToken } from '../middleware/auth.js';
 
 const router = Router();
 
-function setAuthCookie(res, token) {
-  res.cookie('token', token, {
+function jsonError(res, status, error, extra = {}) {
+  return res.status(status).json({ error, ...extra });
+}
+
+function cookieOptions() {
+  const isProd = process.env.NODE_ENV === 'production';
+  return {
     httpOnly: true,
     sameSite: 'lax',
-    secure: false, // set true in prod w/ https
+    secure: isProd, // true in prod w/ https
     maxAge: 1000 * 60 * 60 * 24 * 7,
+    path: '/',
+  };
+}
+
+function setAuthCookie(res, token) {
+  res.cookie('token', token, cookieOptions());
+}
+
+function clearAuthCookie(res) {
+  res.clearCookie('token', cookieOptions());
+}
+
+function signToken({ userId, username }) {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET missing');
+
+  return jwt.sign({ username }, secret, {
+    subject: String(userId),
+    expiresIn: '7d',
   });
 }
 
 router.post('/register', async (req, res) => {
   const { username, email, password, acceptTerms } = req.body || {};
 
-  if (!acceptTerms)
-    return res.status(400).json({ field: 'acceptTerms', error: 'You must accept the terms.' });
-  if (!username || username.length < 3)
-    return res.status(400).json({ field: 'username', error: 'Username must be 3+ chars.' });
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-    return res.status(400).json({ field: 'email', error: 'Enter a valid email.' });
-  if (!password || password.length < 8)
-    return res.status(400).json({ field: 'password', error: 'Password must be 8+ chars.' });
+  if (!acceptTerms) {
+    return jsonError(res, 400, 'You must accept the terms.', {
+      field: 'acceptTerms',
+    });
+  }
 
-  const password_hash = await bcrypt.hash(password, 10);
+  if (!username || String(username).trim().length < 3) {
+    return jsonError(res, 400, 'Username must be 3+ chars.', {
+      field: 'username',
+    });
+  }
+
+  const emailStr = String(email || '').trim();
+  if (!emailStr || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr)) {
+    return jsonError(res, 400, 'Enter a valid email.', { field: 'email' });
+  }
+
+  if (!password || String(password).length < 8) {
+    return jsonError(res, 400, 'Password must be 8+ chars.', {
+      field: 'password',
+    });
+  }
 
   try {
-    const [result] = await pool.execute(
+    const password_hash = await bcrypt.hash(String(password), 10);
+
+    const [result] = await dbExecute(
       'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
-      [username, email, password_hash]
+      [String(username).trim(), emailStr, password_hash]
     );
 
-    const token = jwt.sign({ username }, process.env.JWT_SECRET, {
-      subject: String(result.insertId),
-      expiresIn: '7d',
-    });
+    const userId = Number(result.insertId);
+    const token = signToken({ userId, username: String(username).trim() });
 
     setAuthCookie(res, token);
 
-    res.json({ id: result.insertId, username, email });
+    // Return token too (does not break cookie clients; enables Bearer clients)
+    return res.json({
+      id: userId,
+      username: String(username).trim(),
+      email: emailStr,
+      token,
+    });
   } catch (err) {
+    const db = err?.db;
     const msg = String(err?.message || '');
-    if (msg.includes('users.username'))
-      return res.status(409).json({ field: 'username', error: 'Username already taken.' });
-    if (msg.includes('users.email'))
-      return res.status(409).json({ field: 'email', error: 'Email already in use.' });
-    return res.status(500).json({ error: 'Server error' });
+
+    // Best-effort: unique constraint messages can vary by schema/index name
+    if (db?.kind === 'conflict' || msg.includes('Duplicate entry')) {
+      if (msg.toLowerCase().includes('username')) {
+        return jsonError(res, 409, 'Username already taken.', { field: 'username' });
+      }
+      if (msg.toLowerCase().includes('email')) {
+        return jsonError(res, 409, 'Email already in use.', { field: 'email' });
+      }
+      return jsonError(res, 409, 'Account already exists.');
+    }
+
+    console.error('POST /api/auth/register failed:', err);
+    return jsonError(res, 500, 'Server error');
   }
 });
 
@@ -56,53 +110,64 @@ router.post('/login', async (req, res) => {
   const { identifier, password, username, email } = req.body || {};
 
   // Accept identifier OR username OR email
-  const loginValue = identifier || username || email;
+  const loginValue = String(identifier || username || email || '').trim();
+  const pw = String(password || '');
 
-  if (!loginValue || !password) {
-    return res.status(400).json({ error: 'Username/email and password required.' });
+  if (!loginValue || !pw) {
+    return jsonError(res, 400, 'Username/email and password required.');
   }
 
-  const [rows] = await pool.execute(
-    'SELECT id, username, email, password_hash FROM users WHERE username = ? OR email = ? LIMIT 1',
-    [loginValue, loginValue]
-  );
+  try {
+    const [rows] = await dbExecute(
+      'SELECT id, username, email, password_hash FROM users WHERE username = ? OR email = ? LIMIT 1',
+      [loginValue, loginValue]
+    );
 
-  const user = rows?.[0];
-  if (!user) return res.status(401).json({ error: 'Invalid username/email or password.' });
+    const user = rows?.[0];
+    if (!user) return jsonError(res, 401, 'Invalid username/email or password.');
 
-  const ok = await bcrypt.compare(password, user.password_hash);
-  if (!ok) return res.status(401).json({ error: 'Invalid username/email or password.' });
+    const ok = await bcrypt.compare(pw, user.password_hash);
+    if (!ok) return jsonError(res, 401, 'Invalid username/email or password.');
 
-  const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, {
-    subject: String(user.id),
-    expiresIn: '7d',
-  });
+    const token = signToken({ userId: user.id, username: user.username });
+    setAuthCookie(res, token);
 
-  setAuthCookie(res, token);
-
-  res.json({ id: user.id, username: user.username, email: user.email });
+    return res.json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      token,
+    });
+  } catch (err) {
+    console.error('POST /api/auth/login failed:', err);
+    return jsonError(res, 500, 'Server error');
+  }
 });
 
 router.post('/logout', (req, res) => {
-  res.clearCookie('token');
-  res.json({ ok: true });
+  clearAuthCookie(res);
+  return res.json({ ok: true });
 });
 
 router.get('/me', async (req, res) => {
   try {
-    const token = req.cookies?.token;
+    const secret = process.env.JWT_SECRET;
+    if (!secret) return res.json(null);
+
+    const token = getAuthToken(req);
     if (!token) return res.json(null);
 
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = Number(payload.sub);
+    const payload = jwt.verify(token, secret);
+    const userId = Number(payload?.sub);
+    if (!Number.isFinite(userId) || userId <= 0) return res.json(null);
 
-    const [rows] = await pool.execute(
+    const [rows] = await dbExecute(
       'SELECT id, username, email, created_at FROM users WHERE id = ? LIMIT 1',
       [userId]
     );
 
-    res.json(rows?.[0] || null);
-  } catch {
+    return res.json(rows?.[0] || null);
+  } catch (err) {
     return res.json(null);
   }
 });

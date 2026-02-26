@@ -6,6 +6,8 @@ import SideBar from '../components/SideBar';
 import ChromeCard from '../components/ChromeCard';
 import { api } from '../app/api';
 
+const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:4000';
+
 export default function AddVehicle() {
   const navigate = useNavigate();
 
@@ -18,6 +20,8 @@ export default function AddVehicle() {
   const [posting, setPosting] = useState(false);
   const [errMsg, setErrMsg] = useState(null);
   const [okMsg, setOkMsg] = useState(null);
+
+  const [imageFile, setImageFile] = useState(null);
 
   const [form, setForm] = useState({
     eraId: '',
@@ -113,6 +117,38 @@ export default function AddVehicle() {
     return s;
   }
 
+  async function uploadImage(vehicleId) {
+    if (!imageFile) return null;
+
+    const fd = new FormData();
+    fd.append('file', imageFile);
+    if (String(form.imageCaption || '').trim())
+      fd.append('caption', String(form.imageCaption).trim());
+
+    const token = localStorage.getItem('otm_token');
+
+    const res = await fetch(`${API_BASE}/api/vehicles/${vehicleId}/photos/upload`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: fd,
+    });
+
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {
+      // ignore
+    }
+
+    if (!res.ok) {
+      const msg = data?.error || `Upload failed (${res.status})`;
+      throw new Error(msg);
+    }
+
+    return data;
+  }
+
   async function onSubmit(e) {
     e.preventDefault();
     if (posting) return;
@@ -155,21 +191,25 @@ export default function AddVehicle() {
       const newId = created?.id;
       if (!newId) throw new Error('Vehicle created, but no id returned.');
 
-      // optional: add photo
-      const url = String(form.imageUrl || '').trim();
-      if (url) {
-        await api(`/api/vehicles/${newId}/photos`, {
-          method: 'POST',
-          body: JSON.stringify({
-            url,
-            caption: String(form.imageCaption || '').trim() || null,
-          }),
-        });
+      // 1) Upload file (preferred)
+      if (imageFile) {
+        await uploadImage(newId);
+      } else {
+        // 2) Fallback: add photo by URL
+        const url = String(form.imageUrl || '').trim();
+        if (url) {
+          await api(`/api/vehicles/${newId}/photos`, {
+            method: 'POST',
+            body: JSON.stringify({
+              url,
+              caption: String(form.imageCaption || '').trim() || null,
+            }),
+          });
+        }
       }
 
       setOkMsg('Vehicle added ✅ Redirecting…');
 
-      // go to detail page
       navigate(`/vehicles/${newId}`, { replace: true });
     } catch (err) {
       setErrMsg(err.message || 'Failed to add vehicle.');
@@ -387,7 +427,7 @@ export default function AddVehicle() {
                 />
               </div>
 
-              {/* Photo */}
+              {/* Photo Upload + URL fallback */}
               <div
                 style={{
                   display: 'grid',
@@ -397,7 +437,23 @@ export default function AddVehicle() {
               >
                 <div style={{ display: 'grid', gap: 6 }}>
                   <div className="muted" style={{ fontSize: 12 }}>
-                    Photo URL (optional)
+                    Upload Photo (recommended)
+                  </div>
+                  <input
+                    className="login-input"
+                    style={{ paddingTop: 10, paddingBottom: 10 }}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                  />
+                  <div className="muted" style={{ fontSize: 12, lineHeight: 1.35 }}>
+                    {imageFile ? `Selected: ${imageFile.name}` : 'No file selected'}
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gap: 6 }}>
+                  <div className="muted" style={{ fontSize: 12 }}>
+                    Photo URL (optional fallback)
                   </div>
                   <input
                     className="login-input"
@@ -405,7 +461,13 @@ export default function AddVehicle() {
                     onChange={(e) => setField('imageUrl', e.target.value)}
                     placeholder="https://…"
                     autoComplete="off"
+                    disabled={!!imageFile}
                   />
+                  <div className="muted" style={{ fontSize: 12, lineHeight: 1.35 }}>
+                    {imageFile
+                      ? 'URL disabled because a file is selected.'
+                      : 'Use this if you don’t want to upload.'}
+                  </div>
                 </div>
 
                 <div style={{ display: 'grid', gap: 6 }}>
