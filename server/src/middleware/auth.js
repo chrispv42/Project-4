@@ -8,9 +8,13 @@ function jsonError(res, status, error, extra = {}) {
 export function getAuthToken(req) {
   // Precedence: Bearer token first (SPA fetch patterns), then cookie token
   const header = req.headers?.authorization;
-  if (typeof header === 'string') {
-    const m = header.match(/^Bearer\s+(.+)$/i);
-    if (m && m[1]) return m[1].trim();
+
+  if (typeof header === 'string' && header.trim()) {
+    // Expected: "Bearer <token>"
+    const parts = header.trim().split(/\s+/);
+    if (parts.length === 2 && /^Bearer$/i.test(parts[0]) && parts[1]) {
+      return parts[1].trim();
+    }
   }
 
   const cookieToken = req.cookies?.token;
@@ -22,12 +26,17 @@ export function getAuthToken(req) {
 export function requireAuth(req, res, next) {
   try {
     const secret = process.env.JWT_SECRET;
-    if (!secret) return jsonError(res, 500, 'Server misconfigured');
+    if (!secret) {
+      return jsonError(res, 500, 'Server misconfigured', {
+        hint: 'JWT_SECRET is not set',
+      });
+    }
 
     const token = getAuthToken(req);
     if (!token) return jsonError(res, 401, 'Not authenticated');
 
-    const payload = jwt.verify(token, secret);
+    // Lock down accepted algorithms (assumes you sign with HS256)
+    const payload = jwt.verify(token, secret, { algorithms: ['HS256'] });
 
     const userId = Number(payload?.sub);
     if (!Number.isFinite(userId) || userId <= 0) {
@@ -41,7 +50,7 @@ export function requireAuth(req, res, next) {
     };
 
     return next();
-  } catch (err) {
+  } catch (_err) {
     return jsonError(res, 401, 'Invalid session');
   }
 }

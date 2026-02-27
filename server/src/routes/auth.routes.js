@@ -13,10 +13,17 @@ function jsonError(res, status, error, extra = {}) {
 
 function cookieOptions() {
   const isProd = process.env.NODE_ENV === 'production';
+
+  // For GitHub Pages (front-end) + Railway (API), cookies are cross-site.
+  // Cross-site cookies require SameSite=None and Secure=true.
+  // Locally, SameSite=None won't work on http://localhost (requires https),
+  // Use Lax for dev.
+  const sameSite = isProd ? 'none' : 'lax';
+
   return {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: isProd, // true in prod w/ https
+    sameSite,
+    secure: isProd, // must be true in prod for SameSite=None cookies
     maxAge: 1000 * 60 * 60 * 24 * 7,
     path: '/',
   };
@@ -30,14 +37,25 @@ function clearAuthCookie(res) {
   res.clearCookie('token', cookieOptions());
 }
 
-function signToken({ userId, username }) {
+function requireJwtSecret() {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error('JWT_SECRET missing');
+  return secret;
+}
+
+function signToken({ userId, username }) {
+  const secret = requireJwtSecret();
 
   return jwt.sign({ username }, secret, {
     subject: String(userId),
     expiresIn: '7d',
+    algorithm: 'HS256',
   });
+}
+
+function verifyToken(token) {
+  const secret = requireJwtSecret();
+  return jwt.verify(token, secret, { algorithms: ['HS256'] });
 }
 
 router.post('/register', async (req, res) => {
@@ -75,14 +93,15 @@ router.post('/register', async (req, res) => {
     );
 
     const userId = Number(result.insertId);
-    const token = signToken({ userId, username: String(username).trim() });
+    const uname = String(username).trim();
+    const token = signToken({ userId, username: uname });
 
     setAuthCookie(res, token);
 
     // Return token too (does not break cookie clients; enables Bearer clients)
     return res.json({
       id: userId,
-      username: String(username).trim(),
+      username: uname,
       email: emailStr,
       token,
     });
@@ -92,10 +111,11 @@ router.post('/register', async (req, res) => {
 
     // Best-effort: unique constraint messages can vary by schema/index name
     if (db?.kind === 'conflict' || msg.includes('Duplicate entry')) {
-      if (msg.toLowerCase().includes('username')) {
+      const lower = msg.toLowerCase();
+      if (lower.includes('username')) {
         return jsonError(res, 409, 'Username already taken.', { field: 'username' });
       }
-      if (msg.toLowerCase().includes('email')) {
+      if (lower.includes('email')) {
         return jsonError(res, 409, 'Email already in use.', { field: 'email' });
       }
       return jsonError(res, 409, 'Account already exists.');
@@ -151,13 +171,14 @@ router.post('/logout', (req, res) => {
 
 router.get('/me', async (req, res) => {
   try {
-    const secret = process.env.JWT_SECRET;
-    if (!secret) return res.json(null);
+    // If JWT_SECRET is not set, treat as "not logged in"
+    if (!process.env.JWT_SECRET) return res.json(null);
 
     const token = getAuthToken(req);
     if (!token) return res.json(null);
 
-    const payload = jwt.verify(token, secret);
+    const payload = verifyToken(token);
+
     const userId = Number(payload?.sub);
     if (!Number.isFinite(userId) || userId <= 0) return res.json(null);
 
@@ -167,7 +188,7 @@ router.get('/me', async (req, res) => {
     );
 
     return res.json(rows?.[0] || null);
-  } catch (err) {
+  } catch (_err) {
     return res.json(null);
   }
 });

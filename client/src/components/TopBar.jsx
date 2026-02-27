@@ -8,16 +8,27 @@ export default function TopBar({ title = "Ol' Time Muscle", user }) {
     try {
       await api('/api/auth/logout', { method: 'POST' });
     } catch {
-      // even if it fails, we still force logout UX
+      // even if it fails, still force logout UX
     } finally {
       navigate('/login', { replace: true });
     }
   }
 
+  const logoSrc = `${process.env.PUBLIC_URL}/brandMark.png`;
+
   return (
     <header className="chrome-card topbar">
       <div className="topbar-left">
-        <img className="topbar-brand" src="/brandMark.png" alt="Brand" />
+        <img
+          className="topbar-brand"
+          src={logoSrc}
+          alt="Brand"
+          onError={(e) => {
+            console.warn('TopBar logo failed to load:', logoSrc);
+            e.currentTarget.style.display = 'none';
+          }}
+        />
+
         <div className="topbar-meta">
           <div className="topbar-title">{title}</div>
           {user ? (

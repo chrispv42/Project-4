@@ -1,6 +1,6 @@
 // client/src/pages/Dashboard.jsx
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import TopBar from '../components/TopBar';
 import SideBar from '../components/SideBar';
 import ChromeCard from '../components/ChromeCard';
@@ -31,7 +31,7 @@ export default function Dashboard() {
         setMe(user);
       } catch (err) {
         if (!alive) return;
-        setErrMsg(err.message || 'Failed to load session.');
+        setErrMsg(err?.message || 'Failed to load session.');
       } finally {
         if (alive) setLoading(false);
       }
@@ -80,85 +80,21 @@ export default function Dashboard() {
             {errMsg ? <p className="field-error">{errMsg}</p> : null}
 
             {!loading && me ? (
-              <>
-                <p style={{ color: 'var(--muted)', marginTop: 6, marginBottom: 16 }}>
-                  Signed in as <span style={{ color: 'var(--text)' }}>{me.username}</span>
-                  {me.email ? (
-                    <>
-                      {' '}
-                      <span style={{ color: 'var(--muted)' }}>•</span> {me.email}
-                    </>
-                  ) : null}
-                  {createdLabel ? (
-                    <>
-                      {' '}
-                      <span style={{ color: 'var(--muted)' }}>•</span> created {createdLabel}
-                    </>
-                  ) : null}
-                </p>
-
-                {/* Quick Actions */}
-                <div style={{ display: 'grid', gap: 12 }}>
-                  <h3
-                    style={{
-                      margin: 0,
-                      fontSize: 14,
-                      letterSpacing: '0.06em',
-                      color: 'var(--muted)',
-                    }}
-                  >
-                    QUICK ACTIONS
-                  </h3>
-
-                  <div
-                    style={{
-                      display: 'grid',
-                      gap: 10,
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                    }}
-                  >
-                    <Link className="chrome-btn" to="/vehicles" style={{ textDecoration: 'none' }}>
-                      Browse Vehicles
-                    </Link>
-
-                    <Link className="chrome-btn" to="/profile" style={{ textDecoration: 'none' }}>
-                      Profile
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Status / Next Steps */}
-                <div style={{ marginTop: 18, display: 'grid', gap: 10 }}>
-                  <h3
-                    style={{
-                      margin: 0,
-                      fontSize: 14,
-                      letterSpacing: '0.06em',
-                      color: 'var(--muted)',
-                    }}
-                  >
-                    STATUS
-                  </h3>
-
-                  <div
-                    style={{
-                      padding: 12,
-                      borderRadius: 14,
-                      border: '1px solid rgba(255,255,255,0.14)',
-                      background: 'rgba(255,255,255,0.035)',
-                      color: 'var(--muted)',
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    <div style={{ color: 'var(--text)', marginBottom: 6 }}>
-                      ✅ Auth is live (cookie session)
-                    </div>
-                    <div>
-                      Next up: era/categories → vehicles list → vehicle thread (comments + replies).
-                    </div>
-                  </div>
-                </div>
-              </>
+              <p style={{ color: 'var(--muted)', marginTop: 6, marginBottom: 0 }}>
+                Signed in as <span style={{ color: 'var(--text)' }}>{me.username}</span>
+                {me.email ? (
+                  <>
+                    {' '}
+                    <span style={{ color: 'var(--muted)' }}>•</span> {me.email}
+                  </>
+                ) : null}
+                {createdLabel ? (
+                  <>
+                    {' '}
+                    <span style={{ color: 'var(--muted)' }}>•</span> created {createdLabel}
+                  </>
+                ) : null}
+              </p>
             ) : null}
           </ChromeCard>
         </div>

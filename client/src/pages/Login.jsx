@@ -46,7 +46,7 @@ export default function Login() {
             alt="Brand Mark"
             onError={(e) => {
               // Fallback for weird deploy bases
-              e.currentTarget.src = '/brandMark.png';
+              e.currentTarget.src = './brandMark.png';
             }}
           />
         </div>

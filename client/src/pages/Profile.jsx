@@ -57,7 +57,7 @@ export default function Profile() {
       <TopBar title="Profile" user={me} />
 
       <div className="app-row">
-        {/* ✅ Tip only on Profile */}
+        {/*Tip only on Profile*/}
         <SideBar showTip />
 
         <div className="content-area">
@@ -122,9 +122,6 @@ export default function Profile() {
                 </Link>
               </div>
 
-              <div className="muted" style={{ fontSize: 12, marginTop: 12, lineHeight: 1.35 }}>
-                Flow: Profile → Add Vehicle → Submit → Vehicle Detail ✅
-              </div>
             </ChromeCard>
           </div>
         </div>

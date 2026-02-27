@@ -122,8 +122,9 @@ export default function AddVehicle() {
 
     const fd = new FormData();
     fd.append('file', imageFile);
-    if (String(form.imageCaption || '').trim())
+    if (String(form.imageCaption || '').trim()) {
       fd.append('caption', String(form.imageCaption).trim());
+    }
 
     const token = localStorage.getItem('otm_token');
 
@@ -209,7 +210,6 @@ export default function AddVehicle() {
       }
 
       setOkMsg('Vehicle added ✅ Redirecting…');
-
       navigate(`/vehicles/${newId}`, { replace: true });
     } catch (err) {
       setErrMsg(err.message || 'Failed to add vehicle.');
@@ -261,18 +261,21 @@ export default function AddVehicle() {
             <form onSubmit={onSubmit} style={{ display: 'grid', gap: 14, marginTop: 10 }}>
               {/* Era */}
               <div style={{ display: 'grid', gap: 6 }}>
-                <div className="muted" style={{ fontSize: 12 }}>
+                <label className="muted" style={{ fontSize: 12 }} htmlFor="eraId">
                   Era
-                </div>
+                </label>
 
                 <select
+                  id="eraId"
+                  name="eraId"
                   className="chrome-select"
                   value={form.eraId}
                   onChange={(e) => setField('eraId', e.target.value)}
                   disabled={eraLoading}
+                  autoComplete="off"
                 >
-                  {eraLoading ? <option>Loading eras…</option> : null}
-                  {!eraLoading && !eras.length ? <option>No eras found</option> : null}
+                  {eraLoading ? <option value="">Loading eras…</option> : null}
+                  {!eraLoading && !eras.length ? <option value="">No eras found</option> : null}
 
                   {eras.map((e) => (
                     <option key={e.id} value={String(e.id)}>
@@ -283,7 +286,7 @@ export default function AddVehicle() {
 
                 {selectedEra ? (
                   <div className="muted" style={{ fontSize: 12, lineHeight: 1.35 }}>
-                    Now Searching:{' '}
+                    Selected Era:{' '}
                     <span style={{ color: 'var(--text)' }}>{selectedEra.name || '—'}</span>
                   </div>
                 ) : null}
@@ -298,10 +301,12 @@ export default function AddVehicle() {
                 }}
               >
                 <div style={{ display: 'grid', gap: 6 }}>
-                  <div className="muted" style={{ fontSize: 12 }}>
+                  <label className="muted" style={{ fontSize: 12 }} htmlFor="year">
                     Year *
-                  </div>
+                  </label>
                   <input
+                    id="year"
+                    name="year"
                     className="login-input"
                     value={form.year}
                     onChange={(e) => setField('year', e.target.value)}
@@ -312,10 +317,12 @@ export default function AddVehicle() {
                 </div>
 
                 <div style={{ display: 'grid', gap: 6 }}>
-                  <div className="muted" style={{ fontSize: 12 }}>
+                  <label className="muted" style={{ fontSize: 12 }} htmlFor="make">
                     Make *
-                  </div>
+                  </label>
                   <input
+                    id="make"
+                    name="make"
                     className="login-input"
                     value={form.make}
                     onChange={(e) => setField('make', e.target.value)}
@@ -325,10 +332,12 @@ export default function AddVehicle() {
                 </div>
 
                 <div style={{ display: 'grid', gap: 6 }}>
-                  <div className="muted" style={{ fontSize: 12 }}>
+                  <label className="muted" style={{ fontSize: 12 }} htmlFor="model">
                     Model *
-                  </div>
+                  </label>
                   <input
+                    id="model"
+                    name="model"
                     className="login-input"
                     value={form.model}
                     onChange={(e) => setField('model', e.target.value)}
@@ -338,10 +347,12 @@ export default function AddVehicle() {
                 </div>
 
                 <div style={{ display: 'grid', gap: 6 }}>
-                  <div className="muted" style={{ fontSize: 12 }}>
+                  <label className="muted" style={{ fontSize: 12 }} htmlFor="trim">
                     Trim
-                  </div>
+                  </label>
                   <input
+                    id="trim"
+                    name="trim"
                     className="login-input"
                     value={form.trim}
                     onChange={(e) => setField('trim', e.target.value)}
@@ -360,10 +371,12 @@ export default function AddVehicle() {
                 }}
               >
                 <div style={{ display: 'grid', gap: 6 }}>
-                  <div className="muted" style={{ fontSize: 12 }}>
+                  <label className="muted" style={{ fontSize: 12 }} htmlFor="engine">
                     Engine
-                  </div>
+                  </label>
                   <input
+                    id="engine"
+                    name="engine"
                     className="login-input"
                     value={form.engine}
                     onChange={(e) => setField('engine', e.target.value)}
@@ -373,10 +386,12 @@ export default function AddVehicle() {
                 </div>
 
                 <div style={{ display: 'grid', gap: 6 }}>
-                  <div className="muted" style={{ fontSize: 12 }}>
+                  <label className="muted" style={{ fontSize: 12 }} htmlFor="horsepower">
                     Horsepower
-                  </div>
+                  </label>
                   <input
+                    id="horsepower"
+                    name="horsepower"
                     className="login-input"
                     value={form.horsepower}
                     onChange={(e) => setField('horsepower', e.target.value)}
@@ -387,10 +402,12 @@ export default function AddVehicle() {
                 </div>
 
                 <div style={{ display: 'grid', gap: 6 }}>
-                  <div className="muted" style={{ fontSize: 12 }}>
+                  <label className="muted" style={{ fontSize: 12 }} htmlFor="transmission">
                     Transmission
-                  </div>
+                  </label>
                   <input
+                    id="transmission"
+                    name="transmission"
                     className="login-input"
                     value={form.transmission}
                     onChange={(e) => setField('transmission', e.target.value)}
@@ -400,10 +417,12 @@ export default function AddVehicle() {
                 </div>
 
                 <div style={{ display: 'grid', gap: 6 }}>
-                  <div className="muted" style={{ fontSize: 12 }}>
+                  <label className="muted" style={{ fontSize: 12 }} htmlFor="color">
                     Color
-                  </div>
+                  </label>
                   <input
+                    id="color"
+                    name="color"
                     className="login-input"
                     value={form.color}
                     onChange={(e) => setField('color', e.target.value)}
@@ -415,10 +434,12 @@ export default function AddVehicle() {
 
               {/* Notes */}
               <div style={{ display: 'grid', gap: 6 }}>
-                <div className="muted" style={{ fontSize: 12 }}>
+                <label className="muted" style={{ fontSize: 12 }} htmlFor="notes">
                   Notes
-                </div>
+                </label>
                 <textarea
+                  id="notes"
+                  name="notes"
                   className="login-input"
                   style={{ minHeight: 110, resize: 'vertical' }}
                   value={form.notes}
@@ -436,10 +457,12 @@ export default function AddVehicle() {
                 }}
               >
                 <div style={{ display: 'grid', gap: 6 }}>
-                  <div className="muted" style={{ fontSize: 12 }}>
+                  <label className="muted" style={{ fontSize: 12 }} htmlFor="imageFile">
                     Upload Photo (recommended)
-                  </div>
+                  </label>
                   <input
+                    id="imageFile"
+                    name="imageFile"
                     className="login-input"
                     style={{ paddingTop: 10, paddingBottom: 10 }}
                     type="file"
@@ -452,15 +475,17 @@ export default function AddVehicle() {
                 </div>
 
                 <div style={{ display: 'grid', gap: 6 }}>
-                  <div className="muted" style={{ fontSize: 12 }}>
+                  <label className="muted" style={{ fontSize: 12 }} htmlFor="imageUrl">
                     Photo URL (optional fallback)
-                  </div>
+                  </label>
                   <input
+                    id="imageUrl"
+                    name="imageUrl"
                     className="login-input"
                     value={form.imageUrl}
                     onChange={(e) => setField('imageUrl', e.target.value)}
                     placeholder="https://…"
-                    autoComplete="off"
+                    autoComplete="url"
                     disabled={!!imageFile}
                   />
                   <div className="muted" style={{ fontSize: 12, lineHeight: 1.35 }}>
@@ -471,10 +496,12 @@ export default function AddVehicle() {
                 </div>
 
                 <div style={{ display: 'grid', gap: 6 }}>
-                  <div className="muted" style={{ fontSize: 12 }}>
+                  <label className="muted" style={{ fontSize: 12 }} htmlFor="imageCaption">
                     Caption (optional)
-                  </div>
+                  </label>
                   <input
+                    id="imageCaption"
+                    name="imageCaption"
                     className="login-input"
                     value={form.imageCaption}
                     onChange={(e) => setField('imageCaption', e.target.value)}
@@ -492,11 +519,6 @@ export default function AddVehicle() {
                 <Link className="chrome-btn" to="/vehicles" style={{ textDecoration: 'none' }}>
                   Cancel
                 </Link>
-              </div>
-
-              <div className="muted" style={{ fontSize: 12, lineHeight: 1.35 }}>
-                Tip: Add one vehicle per era first — once you see them populate, we’ll add uploading
-                later if you want.
               </div>
             </form>
           </ChromeCard>

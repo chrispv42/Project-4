@@ -16,7 +16,7 @@ export default function Vehicles() {
 
   const [eras, setEras] = useState([]);
   const [eraLoading, setEraLoading] = useState(true);
-  const [selectedEraId, setSelectedEraId] = useState('');
+  const [selectedEraId, setSelectedEraId] = useState(''); // '' = All Eras
 
   const [vehicles, setVehicles] = useState([]);
   const [vehLoading, setVehLoading] = useState(false);
@@ -47,7 +47,7 @@ export default function Vehicles() {
         setMe(user);
       } catch (err) {
         if (!alive) return;
-        setErrMsg(err.message || 'Failed to load session.');
+        setErrMsg(err?.message || 'Failed to load session.');
       } finally {
         if (alive) setLoadingMe(false);
       }
@@ -74,12 +74,12 @@ export default function Vehicles() {
         const list = Array.isArray(rows) ? rows : [];
         setEras(list);
 
-        if (!selectedEraId && list.length) {
-          setSelectedEraId(String(list[0].id));
-        }
+        // Academic-safe default: start with "All Eras" to prevent accidental era mismatches/leaks.
+        // Users can then pick a specific era intentionally.
+        setSelectedEraId('');
       } catch (err) {
         if (!alive) return;
-        setErrMsg(err.message || 'Failed to load eras.');
+        setErrMsg(err?.message || 'Failed to load eras.');
       } finally {
         if (alive) setEraLoading(false);
       }
@@ -89,29 +89,28 @@ export default function Vehicles() {
     return () => {
       alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [navigate]);
 
   // Load vehicles when era changes
   useEffect(() => {
     let alive = true;
 
     async function loadVehicles() {
-      if (!selectedEraId) {
-        setVehicles([]);
-        return;
-      }
-
       setVehLoading(true);
       setErrMsg(null);
 
       try {
-        const rows = await api(`/api/vehicles/by-era/${selectedEraId}`);
+        // Default "All Eras" = fetch everything.
+        // This avoids showing the wrong era under a selected label
+        // if era IDs/slugs ever drift or seed data is incomplete.
+        const endpoint = selectedEraId ? `/api/vehicles/by-era/${selectedEraId}` : '/api/vehicles';
+
+        const rows = await api(endpoint);
         if (!alive) return;
         setVehicles(Array.isArray(rows) ? rows : []);
       } catch (err) {
         if (!alive) return;
-        setErrMsg(err.message || 'Failed to load vehicles.');
+        setErrMsg(err?.message || 'Failed to load vehicles.');
       } finally {
         if (alive) setVehLoading(false);
       }
@@ -139,10 +138,15 @@ export default function Vehicles() {
     setSelectedEraId(e.target.value);
   }
 
-  const selectedEra = useMemo(
-    () => eras.find((e) => String(e.id) === String(selectedEraId)) || null,
-    [eras, selectedEraId]
-  );
+  const selectedEra = useMemo(() => {
+    if (!selectedEraId) return null;
+    return eras.find((e) => String(e.id) === String(selectedEraId)) || null;
+  }, [eras, selectedEraId]);
+
+  const nowSearchingLabel = useMemo(() => {
+    if (!selectedEraId) return 'All Eras';
+    return selectedEra?.name || 'Selected Era';
+  }, [selectedEraId, selectedEra]);
 
   function resolveImg(url) {
     if (!url) return '';
@@ -176,8 +180,8 @@ export default function Vehicles() {
                 <div className="callout-title">Request failed</div>
                 <div className="callout-body">{errMsg}</div>
                 <div className="callout-hint">
-                  Make sure <code>/api/eras</code> and <code>/api/vehicles/by-era/:id</code> are
-                  mounted.
+                  Make sure <code>/api/eras</code> and <code>/api/vehicles</code> (and optionally{' '}
+                  <code>/api/vehicles/by-era/:id</code>) are mounted.
                 </div>
               </div>
             ) : null}
@@ -204,20 +208,20 @@ export default function Vehicles() {
                   disabled={eraLoading}
                 >
                   {eraLoading ? <option>Loading eras…</option> : null}
-                  {!eraLoading && !eras.length ? <option>No eras found</option> : null}
 
-                  {eras.map((e) => (
-                    <option key={e.id} value={String(e.id)}>
-                      {e.name}
-                    </option>
-                  ))}
+                  {!eraLoading ? <option value="">All Eras</option> : null}
+
+                  {!eraLoading &&
+                    eras.map((e) => (
+                      <option key={e.id} value={String(e.id)}>
+                        {e.name}
+                      </option>
+                    ))}
                 </select>
 
-                {selectedEra ? (
-                  <div className="muted" style={{ fontSize: 12, lineHeight: 1.35 }}>
-                    Now Searching: <span style={{ color: 'var(--text)' }}>{selectedEra.name}</span>
-                  </div>
-                ) : null}
+                <div className="muted" style={{ fontSize: 12, lineHeight: 1.35 }}>
+                  Now Searching: <span style={{ color: 'var(--text)' }}>{nowSearchingLabel}</span>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gap: 6 }}>

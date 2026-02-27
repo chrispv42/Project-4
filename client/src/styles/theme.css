@@ -1,56 +1,58 @@
 /* theme.css */
 
 :root {
-  /* Core */
+  /* Brand */
+  --brand-red: #4f0301;
+  --brand-gray: #646466;
+  --brand-white: #fbfbfb;
+
+  /* Base */
   --bg0: #07070a;
   --bg1: #0b0b12;
 
-  /* Chrome system (converted from rgba → hex w/ alpha) */
-  --chromeA: #ffffff1a; /* rgba(255,255,255,0.10) */
-  --chromeB: #ffffff0f; /* rgba(255,255,255,0.06) */
-  --stroke: #ffffff2e; /* rgba(255,255,255,0.18) */
-  --glow: #b7ffff40; /* rgba(183,255,255,0.25) */
-  --hot: #a05aff59; /* rgba(160,90,255,0.35) */
-
-  --text: #ffffffeb; /* rgba(255,255,255,0.92) */
-  --muted: #ffffffa6; /* rgba(255,255,255,0.65) */
+  /* Text */
+  --text: #ffffffeb; /* 92% */
+  --muted: #ffffffa6; /* 65% */
   --danger: #ff3b6b;
 
+  /* Layout */
   --brandW: 140px;
+  --pad: 12px;
+  --gap: 12px;
 
-  /* Responsive spacing */
-  --pad: 12px; /* mobile default */
-  --gap: 12px; /* mobile default */
+  /* Chrome surfaces */
+  --chromeA: #ffffff1a; /* 10% */
+  --chromeB: #ffffff0f; /* 6% */
+  --stroke: #ffffff2e; /* 18% */
 
-  /* Reusable alpha tokens (avoids random rgba everywhere) */
-  --w02: #ffffff05; /* 0.02 */
-  --w03: #ffffff09; /* 0.035 */
-  --w04: #ffffff0a; /* 0.04 */
-  --w05: #ffffff0d; /* 0.05 */
-  --w06: #ffffff0f; /* 0.06 */
-  --w08: #ffffff14; /* 0.08 */
-  --w10: #ffffff1a; /* 0.10 */
-  --w12: #ffffff1f; /* 0.12 */
-  --w14: #ffffff24; /* 0.14 */
-  --w15: #ffffff26; /* 0.15 */
-  --w18: #ffffff2e; /* 0.18 */
-  --w20: #ffffff33; /* 0.20 */
+  /* White alpha tokens */
+  --w02: #ffffff05; /* 2% */
+  --w03: #ffffff09; /* 3.5% */
+  --w04: #ffffff0a; /* 4% */
+  --w05: #ffffff0d; /* 5% */
+  --w06: #ffffff0f; /* 6% */
+  --w08: #ffffff14; /* 8% */
+  --w10: #ffffff1a; /* 10% */
+  --w12: #ffffff1f; /* 12% */
+  --w14: #ffffff24; /* 14% */
+  --w15: #ffffff26; /* 15% */
+  --w18: #ffffff2e; /* 18% */
+  --w20: #ffffff33; /* 20% */
 
-  --c06: #00ffff0f; /* cyan 0.06 */
-  --c08: #00ffff14; /* cyan 0.08 */
-  --c10: #00ffff1a; /* cyan 0.10 */
-  --c12: #00ffff1f; /* cyan 0.12 */
-  --c14: #00ffff24; /* cyan 0.14 */
-  --c25: #00ffff40; /* cyan 0.25 */
+  /* Brand-red alpha tokens */
+  --r06: #4f03010f; /* 6% */
+  --r08: #4f030114; /* 8% */
+  --r10: #4f03011a; /* 10% */
+  --r12: #4f03011f; /* 12% */
+  --r14: #4f030124; /* 14% */
+  --r25: #4f030140; /* 25% */
 
-  --ink45: #00000073; /* black 0.45 */
-  --ink55: #0000008c; /* black 0.55 */
+  /* Shadows */
+  --ink45: #00000073; /* 45% */
+  --ink55: #0000008c; /* 55% */
 }
 
-/* =========================
-   Base Reset
-   ========================= */
-
+/* Reset */
 *,
 *::before,
 *::after {
@@ -63,18 +65,15 @@ body,
   height: 100%;
 }
 
-/* =========================
-   Base
-   ========================= */
-
+/* Base */
 body {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 
   background:
-    radial-gradient(900px 500px at 12% 18%, #4f0301, transparent 55%),
-    radial-gradient(900px 500px at 80% 50%, #646466, transparent 42%),
-    radial-gradient(900px 700px at 50% 90%, #fbfbfb, transparent 23%),
+    radial-gradient(900px 500px at 12% 18%, var(--brand-red), transparent 55%),
+    radial-gradient(900px 500px at 80% 50%, var(--brand-gray), transparent 42%),
+    radial-gradient(900px 700px at 50% 90%, var(--brand-white), transparent 23%),
     linear-gradient(180deg, var(--bg0), var(--bg1));
   background-repeat: no-repeat;
   background-attachment: fixed;
@@ -85,10 +84,7 @@ body {
   min-height: 100vh;
 }
 
-/* =========================
-   Utilities
-   ========================= */
-
+/* Utilities */
 .muted {
   color: var(--muted);
 }
@@ -100,10 +96,7 @@ body {
   white-space: nowrap;
 }
 
-/* =========================
-   Chrome Card Base
-   ========================= */
-
+/* Chrome base */
 .chrome-card {
   background: linear-gradient(180deg, var(--chromeA), var(--chromeB));
   border: 1px solid var(--stroke);
@@ -121,12 +114,12 @@ body {
   position: absolute;
   inset: 0;
   border-radius: 22px 8px 22px 8px;
-  background: linear-gradient(135deg, var(--w14), transparent 35%, var(--c08));
+  background: linear-gradient(135deg, var(--w14), transparent 35%, var(--r08));
   pointer-events: none;
   mask: linear-gradient(#000000, transparent 65%);
 }
 
-/* Full rounded overrides */
+/* Rounded variants */
 .login-card {
   width: min(420px, 100%);
   padding: 32px 24px 28px 32px;
@@ -137,18 +130,12 @@ body {
   border-radius: 22px !important;
 }
 
-.panel-card {
-  border-radius: 22px !important;
-}
-
+.panel-card,
 .panel-card::before {
   border-radius: 22px !important;
 }
 
-/* =========================
-   Buttons
-   ========================= */
-
+/* Buttons */
 .chrome-btn {
   border: 1px solid var(--w20);
   border-radius: 14px;
@@ -167,7 +154,7 @@ body {
 .chrome-btn:hover {
   box-shadow:
     0 12px 38px var(--ink55),
-    0 0 0 2px var(--c10);
+    0 0 0 2px var(--r10);
 }
 
 .chrome-btn:disabled {
@@ -175,10 +162,88 @@ body {
   cursor: not-allowed;
 }
 
-/* =========================
-   Login Page
-   ========================= */
+/* Inputs / Selects / Textareas */
+.login-input,
+.chrome-input,
+.chrome-select,
+.thread-textarea {
+  width: 100%;
+  color: var(--text);
+  outline: none;
+  border: 1px solid var(--w15);
+  background: var(--w05);
+}
 
+.login-input {
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.chrome-input {
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.chrome-select {
+  padding: 10px 42px 10px 12px;
+  border-radius: 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background-image:
+    linear-gradient(180deg, var(--w06), var(--w02)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24'%3E%3Cpath fill='%23FBFBFBE6' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position:
+    0 0,
+    right 12px center;
+  background-size:
+    auto,
+    18px 18px;
+}
+
+.thread-textarea {
+  min-height: 90px;
+  resize: vertical;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.login-input:focus,
+.chrome-input:focus,
+.chrome-select:focus,
+.thread-textarea:focus {
+  border-color: var(--brand-red);
+  box-shadow: 0 0 0 2px var(--r08);
+}
+
+.chrome-input::placeholder,
+.thread-textarea::placeholder {
+  color: var(--muted);
+}
+
+.chrome-select option {
+  background: var(--bg1);
+  color: var(--text);
+}
+
+/* Autofill */
+.login-input:-webkit-autofill,
+.login-input:-webkit-autofill:hover,
+.login-input:-webkit-autofill:focus,
+.login-input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text) !important;
+  caret-color: var(--text);
+  transition: background-color 999999s ease-out 0s;
+  -webkit-box-shadow: 0 0 0px 1000px var(--w05) inset !important;
+  box-shadow: 0 0 0px 1000px var(--w05) inset !important;
+  border: 1px solid var(--w15);
+}
+
+/* Login */
 .login-page {
   min-height: 100vh;
   display: flex;
@@ -224,112 +289,13 @@ body {
   margin-top: 4px;
 }
 
-.login-input {
-  width: 100%;
-  padding: 10px;
-  border-radius: 10px;
-
-  border: 1px solid var(--w15);
-  background: var(--w05);
-  color: var(--text);
-
-  outline: none;
-}
-
-.login-input:focus {
-  border-color: #4f0301;
-  box-shadow: 0 0 0 2px var(--c08);
-}
-
-/* Autofill fix */
-.login-input:-webkit-autofill,
-.login-input:-webkit-autofill:hover,
-.login-input:-webkit-autofill:focus,
-.login-input:-webkit-autofill:active {
-  -webkit-text-fill-color: var(--text) !important;
-  caret-color: var(--text);
-  transition: background-color 999999s ease-out 0s;
-  -webkit-box-shadow: 0 0 0px 1000px var(--w05) inset !important;
-  box-shadow: 0 0 0px 1000px var(--w05) inset !important;
-  border: 1px solid var(--w15);
-}
-
 .login-btn {
   width: var(--brandW);
   margin: 12px auto 0;
   display: block;
 }
 
-/* =========================
-   Chrome Select (dropdown)
-   ========================= */
-
-.chrome-select {
-  width: 100%;
-  padding: 10px 42px 10px 12px;
-  border-radius: 12px;
-
-  border: 1px solid var(--w15);
-  background: var(--w05);
-  color: var(--text);
-
-  outline: none;
-
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-
-  background-image:
-    linear-gradient(180deg, var(--w06), var(--w02)),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24'%3E%3Cpath fill='%23DCFFFFD9' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position:
-    0 0,
-    right 12px center;
-  background-size:
-    auto,
-    18px 18px;
-}
-
-.chrome-select:focus {
-  border-color: #4f0301;
-  box-shadow: 0 0 0 2px var(--c08);
-}
-
-.chrome-select option {
-  background: #0b0b12;
-  color: var(--text);
-}
-
-/* =========================
-   Chrome Input
-   ========================= */
-
-.chrome-input {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 12px;
-
-  border: 1px solid var(--w15);
-  background: var(--w05);
-  color: var(--text);
-
-  outline: none;
-}
-
-.chrome-input:focus {
-  border-color: #4f0301;
-  box-shadow: 0 0 0 2px var(--c08);
-}
-
-.chrome-input::placeholder {
-  color: var(--muted);
-}
-
-/* =========================
-   Password Toggle
-   ========================= */
-
+/* Password toggle */
 .password-field {
   position: relative;
 }
@@ -362,27 +328,23 @@ body {
 
 .password-toggle:hover {
   color: var(--text);
-  box-shadow: 0 0 0 2px var(--c08);
+  box-shadow: 0 0 0 2px var(--r08);
 }
 
 .password-toggle:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--c12);
+  box-shadow: 0 0 0 2px var(--r12);
 }
 
 .password-eye {
   display: block;
 }
 
-/* =========================
-   Layout
-   ========================= */
-
+/* Layout */
 .app-shell {
   padding: var(--pad);
   display: grid;
   gap: var(--gap);
-
   width: 100%;
   max-width: none;
   margin: 0;
@@ -414,10 +376,7 @@ body {
   min-width: 0;
 }
 
-/* =========================
-   TopBar
-   ========================= */
-
+/* TopBar */
 .topbar {
   padding: 14px;
   display: flex;
@@ -461,10 +420,7 @@ body {
   flex: 0 0 auto;
 }
 
-/* =========================
-   Sidebar
-   ========================= */
-
+/* Sidebar */
 .sidebar-nav {
   display: grid;
   gap: 10px;
@@ -500,9 +456,9 @@ body {
   padding: 2px 8px;
   border-radius: 999px;
 
-  border: 1px solid var(--c14);
-  background: var(--c06);
-  color: #dcffffe6;
+  border: 1px solid var(--r14);
+  background: var(--r06);
+  color: var(--brand-white);
 
   font-size: 11px;
   letter-spacing: 0.08em;
@@ -513,25 +469,7 @@ body {
   display: inline;
 }
 
-@media (max-width: 420px) {
-  .sidebar-nav {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  .sidebar-tip {
-    border-radius: 14px;
-  }
-
-  .login-page {
-    padding: 14px;
-  }
-}
-
-/* =========================
-   Detail header
-   ========================= */
-
+/* Detail header */
 .detail-head {
   display: flex;
   align-items: center;
@@ -544,10 +482,7 @@ body {
   margin: 0;
 }
 
-/* =========================
-   Vehicle Detail Enhancements
-   ========================= */
-
+/* Vehicle detail */
 .vehicle-summary {
   margin-top: 18px;
   display: grid;
@@ -567,10 +502,7 @@ body {
   box-shadow: 0 18px 50px var(--ink55);
 }
 
-/* =========================
-   Comments / Thread
-   ========================= */
-
+/* Thread */
 .thread {
   margin-top: 28px;
   display: grid;
@@ -591,31 +523,6 @@ body {
   border-radius: 18px;
   border: 1px solid var(--w14);
   background: linear-gradient(180deg, var(--w06), var(--w03));
-}
-
-.thread-textarea {
-  width: 100%;
-  min-height: 90px;
-  resize: vertical;
-  padding: 12px 14px;
-  border-radius: 14px;
-
-  border: 1px solid var(--w15);
-  background: var(--w05);
-  color: var(--text);
-
-  outline: none;
-  font-family: inherit;
-  line-height: 1.4;
-}
-
-.thread-textarea:focus {
-  border-color: #4f0301;
-  box-shadow: 0 0 0 2px var(--c08);
-}
-
-.thread-textarea::placeholder {
-  color: var(--muted);
 }
 
 .thread-actions {
@@ -667,7 +574,7 @@ body {
   line-height: 1.55;
   white-space: pre-wrap;
   margin-top: 2px;
-  margin-bottom: 10px; /* space before footer/actions */
+  margin-bottom: 10px;
 }
 
 .thread-foot {
@@ -692,7 +599,7 @@ body {
 .thread-replyBtn:hover {
   box-shadow:
     0 12px 32px var(--ink55),
-    0 0 0 2px var(--c10);
+    0 0 0 2px var(--r10);
 }
 
 .thread-replyCount {
@@ -700,7 +607,7 @@ body {
 }
 
 .thread-replyComposer {
-  margin-top: 12px; /* space between Reply/Cancel and composer */
+  margin-top: 12px;
   display: grid;
   gap: 12px;
   padding: 12px;
@@ -714,18 +621,30 @@ body {
 }
 
 .thread-replies {
-  margin-top: 14px; /* space between parent and its children */
+  margin-top: 14px;
   display: grid;
-  gap: 14px; /* space between child replies */
+  gap: 14px;
 }
 
 .thread-empty {
   padding: 10px 4px;
 }
 
-/* =========================
-   Tablet / Desktop
-   ========================= */
+/* Responsive */
+@media (max-width: 420px) {
+  .sidebar-nav {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .sidebar-tip {
+    border-radius: 14px;
+  }
+
+  .login-page {
+    padding: 14px;
+  }
+}
 
 @media (min-width: 768px) {
   :root {

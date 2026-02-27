@@ -72,6 +72,40 @@ const upload = multer({
    Routes
    ============================ */
 
+// GET /api/vehicles
+// Returns all vehicles (used by "All Eras" default in the client)
+router.get('/', async (_req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT
+         v.id,
+         v.year,
+         v.make,
+         v.model,
+         v.trim,
+         v.engine,
+         v.horsepower,
+         v.transmission,
+         v.color,
+         v.created_at,
+         (
+           SELECT vp.url
+           FROM vehicle_photos vp
+           WHERE vp.vehicle_id = v.id
+           ORDER BY vp.created_at DESC, vp.id DESC
+           LIMIT 1
+         ) AS image_url
+       FROM vehicles v
+       ORDER BY v.created_at DESC`
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error('GET /api/vehicles failed:', err);
+    res.status(500).json({ error: 'Failed to load vehicles' });
+  }
+});
+
 // GET /api/vehicles/by-era/:eraId
 router.get('/by-era/:eraId', async (req, res) => {
   const eraId = Number(req.params.eraId);
@@ -215,7 +249,7 @@ router.post('/:id/photos', requireAuth, async (req, res) => {
   if (!isHttpUrl(url)) return res.status(400).json({ error: 'url must be http(s)' });
 
   try {
-    // only allow owner to attach photos (simple rule)
+    // URL only allow owner to attach photos (simple rule)
     const [vRows] = await pool.execute(`SELECT id, user_id FROM vehicles WHERE id = ? LIMIT 1`, [
       vehicleId,
     ]);
@@ -252,7 +286,7 @@ router.post('/:id/photos/upload', requireAuth, upload.single('file'), async (req
   const caption = cleanStr(req.body?.caption, 255) || null;
 
   try {
-    // only allow owner to attach photos (simple rule)
+    // Multer only allow owner to attach photos (simple rule)
     const [vRows] = await pool.execute(`SELECT id, user_id FROM vehicles WHERE id = ? LIMIT 1`, [
       vehicleId,
     ]);
