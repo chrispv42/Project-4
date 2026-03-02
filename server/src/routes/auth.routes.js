@@ -11,29 +11,43 @@ function jsonError(res, status, error, extra = {}) {
   return res.status(status).json({ error, ...extra });
 }
 
-function cookieOptions() {
-  const isProd = process.env.NODE_ENV === 'production';
+function isProduction() {
+  return String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+}
 
-  // When the UI and API are on different origins, the auth cookie is cross-site.
-  // Cross-site cookies require SameSite=None and Secure=true (HTTPS).
-  // In local development over HTTP, use Lax to avoid invalid cookie attributes.
-  const sameSite = isProd ? 'none' : 'lax';
+function isHttpsRequest(req) {
+  // Railway/most proxies set x-forwarded-proto=https
+  const xfProto = String(req?.headers?.['x-forwarded-proto'] || '').toLowerCase();
+  return Boolean(req?.secure) || xfProto === 'https';
+}
+
+function cookieOptions(req) {
+  const prod = isProduction();
+
+  // Cross-site cookie rules:
+  // - SameSite=None requires Secure=true (HTTPS)
+  // - GitHub Pages (https) -> Railway (https) is cross-site
+  const sameSite = prod ? 'none' : 'lax';
+
+  // In production, always Secure.
+  // Also secure when the request is HTTPS (covers proxy/TLS termination setups).
+  const secure = prod || isHttpsRequest(req);
 
   return {
     httpOnly: true,
     sameSite,
-    secure: isProd,
+    secure,
     maxAge: 1000 * 60 * 60 * 24 * 7,
     path: '/',
   };
 }
 
-function setAuthCookie(res, token) {
-  res.cookie('token', token, cookieOptions());
+function setAuthCookie(req, res, token) {
+  res.cookie('token', token, cookieOptions(req));
 }
 
-function clearAuthCookie(res) {
-  res.clearCookie('token', cookieOptions());
+function clearAuthCookie(req, res) {
+  res.clearCookie('token', cookieOptions(req));
 }
 
 function requireJwtSecret() {
@@ -90,7 +104,7 @@ router.post('/register', async (req, res) => {
     const userId = Number(result.insertId);
     const token = signToken({ userId, username: uname });
 
-    setAuthCookie(res, token);
+    setAuthCookie(req, res, token);
 
     return res.json({
       id: userId,
@@ -141,7 +155,7 @@ router.post('/login', async (req, res) => {
     if (!ok) return jsonError(res, 401, 'Invalid username/email or password.');
 
     const token = signToken({ userId: user.id, username: user.username });
-    setAuthCookie(res, token);
+    setAuthCookie(req, res, token);
 
     return res.json({
       id: user.id,
@@ -156,7 +170,7 @@ router.post('/login', async (req, res) => {
 });
 
 router.post('/logout', (req, res) => {
-  clearAuthCookie(res);
+  clearAuthCookie(req, res);
   return res.json({ ok: true });
 });
 

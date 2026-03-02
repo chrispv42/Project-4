@@ -28,16 +28,15 @@ function normalizeOrigin(value) {
 
 function parseAllowedOrigins() {
   const rawList = String(process.env.CLIENT_ORIGINS || '').trim();
-  const single = normalizeOrigin(process.env.CLIENT_ORIGIN || 'http://localhost:3000');
+  const fallbackSingle = normalizeOrigin(process.env.CLIENT_ORIGIN || 'http://localhost:3000');
 
   const list = rawList
     ? rawList
         .split(',')
         .map((s) => normalizeOrigin(s))
         .filter(Boolean)
-    : [single];
+    : [fallbackSingle];
 
-  // Ensure unique
   return [...new Set(list)];
 }
 
@@ -55,7 +54,6 @@ const corsConfig = {
 
     if (allowedOrigins.includes(normalized)) return cb(null, true);
 
-    // Helpful debug: shows exactly what the browser sent
     // eslint-disable-next-line no-console
     console.warn('CORS blocked origin:', normalized, 'Allowed:', allowedOrigins);
 
@@ -86,6 +84,7 @@ app.get('/api/health', (_req, res) => {
     ok: true,
     service: 'ol-time-muscle-api',
     env: NODE_ENV,
+    allowedOrigins,
   });
 });
 
@@ -107,11 +106,16 @@ app.use('/api/vehicles', vehiclesRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/categories', categoriesRoutes);
 
-app.listen(PORT, async () => {
+app.listen(PORT, () => {
   console.log(`✅ API listening on port ${PORT}`);
   console.log('ENV:', NODE_ENV);
   console.log('Allowed origins:', allowedOrigins.join(', '));
   console.log('Uploads dir:', uploadsDir);
 
-  await testDB();
+  // IMPORTANT: never crash the server on startup because DB is slow/unavailable
+  testDB()
+    .then(() => console.log('✅ DB connection OK'))
+    .catch((e) =>
+      console.error('❌ DB connection failed (server still running):', e?.message || e)
+    );
 });

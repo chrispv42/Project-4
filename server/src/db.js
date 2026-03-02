@@ -2,7 +2,6 @@
 import mysql from 'mysql2/promise';
 
 const {
-  // Railway style, so gh pages works with mySQL without crashing for project
   DATABASE_URL,
 
   // Local/dev fallback style
@@ -18,19 +17,55 @@ const {
 
 const connectionLimit = Number(DB_CONN_LIMIT) || 10;
 
-// If Railway provides a connection string, use it.
-// Otherwise fall back to host/user/pass/db envs (local setup).
-const poolConfig = DATABASE_URL
-  ? {
-      uri: DATABASE_URL,
-    }
-  : {
-      host: DB_HOST,
-      port: Number(DB_PORT),
-      user: DB_USER,
-      password: DB_PASSWORD,
-      database: DB_NAME,
-    };
+function parseDatabaseUrl(urlStr) {
+  const raw = String(urlStr || '').trim();
+  if (!raw) return null;
+
+  // Railway should resolve ${{MySQL.MYSQL_URL}} into a real URL at runtime.
+  // If you still see "${{...}}" here, it means the env var did not resolve.
+  if (raw.includes('${{')) {
+    throw new Error(
+      'DATABASE_URL was not resolved by Railway. Set DATABASE_URL to a Railway reference like ${{MySQL.MYSQL_URL}} (not quoted), then redeploy.'
+    );
+  }
+
+  const u = new URL(raw);
+
+  const host = u.hostname;
+  const port = u.port ? Number(u.port) : 3306;
+  const user = decodeURIComponent(u.username || '');
+  const password = decodeURIComponent(u.password || '');
+  const database = u.pathname ? u.pathname.replace(/^\//, '') : '';
+
+  // Optional SSL support via querystring if provided (ex: ?ssl=true)
+  const sslParam = (u.searchParams.get('ssl') || '').toLowerCase();
+  const useSSL = sslParam === 'true' || sslParam === '1' || sslParam === 'required';
+
+  return {
+    host,
+    port,
+    user,
+    password,
+    database,
+    ...(useSSL ? { ssl: { rejectUnauthorized: false } } : {}),
+  };
+}
+
+function buildPoolConfig() {
+  if (DATABASE_URL && String(DATABASE_URL).trim()) {
+    return parseDatabaseUrl(DATABASE_URL);
+  }
+
+  return {
+    host: DB_HOST,
+    port: Number(DB_PORT),
+    user: DB_USER,
+    password: DB_PASSWORD,
+    database: DB_NAME,
+  };
+}
+
+const poolConfig = buildPoolConfig();
 
 export const pool = mysql.createPool({
   ...poolConfig,
@@ -50,12 +85,10 @@ function normalizeDbError(err) {
   const errno = typeof err?.errno === 'number' ? err.errno : null;
   const message = err?.message ? String(err.message) : 'Database error';
 
-  // Duplicate key (unique index)
   if (code === 'ER_DUP_ENTRY') {
     return { kind: 'conflict', code, errno, message };
   }
 
-  // Foreign key violations
   if (code === 'ER_NO_REFERENCED_ROW_2' || code === 'ER_ROW_IS_REFERENCED_2') {
     return { kind: 'fk', code, errno, message };
   }
@@ -82,12 +115,7 @@ export async function dbQuery(sql, params = []) {
 }
 
 export async function testDB() {
-  try {
-    const [rows] = await dbQuery('SELECT CURRENT_USER() AS user, DATABASE() AS db, NOW() AS now');
-
-    const mode = DATABASE_URL ? 'DATABASE_URL' : 'DB_HOST/DB_USER';
-    console.log(`✅ MySQL Connected (${mode}):`, rows[0]);
-  } catch (err) {
-    console.error('❌ MySQL Connection Failed:', err?.db?.message || err?.message || err);
-  }
+  const [rows] = await dbQuery('SELECT CURRENT_USER() AS user, DATABASE() AS db, NOW() AS now');
+  const mode = DATABASE_URL ? 'DATABASE_URL' : 'DB_HOST/DB_USER';
+  console.log(`✅ MySQL Connected (${mode}):`, rows[0]);
 }
