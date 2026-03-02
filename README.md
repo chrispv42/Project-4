@@ -7,7 +7,7 @@ A full-stack classic muscle car forum built using a true **3-Tier Architecture**
 - **Data Layer** → MySQL Database
 
 **Live Frontend (GitHub Pages):**  
-https://chrispv42.github.io/Project-4/
+https://chrispv42.github.io/Project-4
 
 ---
 

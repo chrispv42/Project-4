@@ -14,16 +14,15 @@ function jsonError(res, status, error, extra = {}) {
 function cookieOptions() {
   const isProd = process.env.NODE_ENV === 'production';
 
-  // For GitHub Pages (front-end) + Railway (API), cookies are cross-site.
-  // Cross-site cookies require SameSite=None and Secure=true.
-  // Locally, SameSite=None won't work on http://localhost (requires https),
-  // Use Lax for dev.
+  // When the UI and API are on different origins, the auth cookie is cross-site.
+  // Cross-site cookies require SameSite=None and Secure=true (HTTPS).
+  // In local development over HTTP, use Lax to avoid invalid cookie attributes.
   const sameSite = isProd ? 'none' : 'lax';
 
   return {
     httpOnly: true,
     sameSite,
-    secure: isProd, // must be true in prod for SameSite=None cookies
+    secure: isProd,
     maxAge: 1000 * 60 * 60 * 24 * 7,
     path: '/',
   };
@@ -62,15 +61,12 @@ router.post('/register', async (req, res) => {
   const { username, email, password, acceptTerms } = req.body || {};
 
   if (!acceptTerms) {
-    return jsonError(res, 400, 'You must accept the terms.', {
-      field: 'acceptTerms',
-    });
+    return jsonError(res, 400, 'You must accept the terms.', { field: 'acceptTerms' });
   }
 
-  if (!username || String(username).trim().length < 3) {
-    return jsonError(res, 400, 'Username must be 3+ chars.', {
-      field: 'username',
-    });
+  const uname = String(username || '').trim();
+  if (uname.length < 3) {
+    return jsonError(res, 400, 'Username must be 3+ chars.', { field: 'username' });
   }
 
   const emailStr = String(email || '').trim();
@@ -78,27 +74,24 @@ router.post('/register', async (req, res) => {
     return jsonError(res, 400, 'Enter a valid email.', { field: 'email' });
   }
 
-  if (!password || String(password).length < 8) {
-    return jsonError(res, 400, 'Password must be 8+ chars.', {
-      field: 'password',
-    });
+  const pw = String(password || '');
+  if (pw.length < 8) {
+    return jsonError(res, 400, 'Password must be 8+ chars.', { field: 'password' });
   }
 
   try {
-    const password_hash = await bcrypt.hash(String(password), 10);
+    const password_hash = await bcrypt.hash(pw, 10);
 
     const [result] = await dbExecute(
       'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
-      [String(username).trim(), emailStr, password_hash]
+      [uname, emailStr, password_hash]
     );
 
     const userId = Number(result.insertId);
-    const uname = String(username).trim();
     const token = signToken({ userId, username: uname });
 
     setAuthCookie(res, token);
 
-    // Return token too (does not break cookie clients; enables Bearer clients)
     return res.json({
       id: userId,
       username: uname,
@@ -109,7 +102,6 @@ router.post('/register', async (req, res) => {
     const db = err?.db;
     const msg = String(err?.message || '');
 
-    // Best-effort: unique constraint messages can vary by schema/index name
     if (db?.kind === 'conflict' || msg.includes('Duplicate entry')) {
       const lower = msg.toLowerCase();
       if (lower.includes('username')) {
@@ -129,7 +121,6 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { identifier, password, username, email } = req.body || {};
 
-  // Accept identifier OR username OR email
   const loginValue = String(identifier || username || email || '').trim();
   const pw = String(password || '');
 
@@ -171,7 +162,6 @@ router.post('/logout', (req, res) => {
 
 router.get('/me', async (req, res) => {
   try {
-    // If JWT_SECRET is not set, treat as "not logged in"
     if (!process.env.JWT_SECRET) return res.json(null);
 
     const token = getAuthToken(req);

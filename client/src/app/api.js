@@ -3,20 +3,35 @@ import axios from 'axios';
 
 const PROD_API = 'https://project-4-production-c453.up.railway.app';
 
+function normalizeBaseUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+  // If someone pastes just the domain, make it valid.
+  return `https://${raw}`;
+}
+
+const envBase = normalizeBaseUrl(process.env.REACT_APP_API_BASE);
+
 const API_BASE =
-  process.env.REACT_APP_API_BASE ||
-  (process.env.NODE_ENV === 'production' ? PROD_API : 'http://localhost:4000');
+  envBase || (process.env.NODE_ENV === 'production' ? PROD_API : 'http://localhost:4000');
+
+// Shows only in browser console, not in API responses.
+if (typeof window !== 'undefined') {
+  // eslint-disable-next-line no-console
+  console.log('[API_BASE]', API_BASE);
+}
 
 const client = axios.create({
   baseURL: API_BASE,
-  withCredentials: true,
+  withCredentials: true, // sends/receives auth cookie if server sets one
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Automatically include Bearer token in Authorization header if JWT exists.
+// If there is also a token stored, send it too (works with server middleware).
 client.interceptors.request.use((config) => {
   const token = localStorage.getItem('otm_token');
   if (token) {
@@ -26,7 +41,7 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
-// Simple wrapper so pages can call api('/path', { method, body }) consistently.
+// Wrapper so pages can call api('/path', { method, body }) consistently.
 export async function api(path, options = {}) {
   const method = String(options.method || 'GET').toLowerCase();
 

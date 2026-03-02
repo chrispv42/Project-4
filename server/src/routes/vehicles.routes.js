@@ -28,10 +28,7 @@ function isHttpUrl(s) {
   }
 }
 
-/* ============================
-   Uploads (multer)
-   ============================ */
-
+// Uploads (multer)
 const storage = multer.diskStorage({
   destination: (req, _file, cb) => {
     const vehicleId = String(req.params.id || 'unknown');
@@ -68,10 +65,7 @@ const upload = multer({
   },
 });
 
-/* ============================
-   Routes
-   ============================ */
-
+/* Routes */
 // GET /api/vehicles
 // Returns all vehicles (used by "All Eras" default in the client)
 router.get('/', async (_req, res) => {
@@ -188,7 +182,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-/**
+/** 
  * POST /api/vehicles
  * Create a vehicle (auth required)
  * Body:

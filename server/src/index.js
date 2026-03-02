@@ -19,37 +19,58 @@ const app = express();
 
 const PORT = Number(process.env.PORT || 4000);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:3000';
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// cookies must be parsed before routes that read req.cookies
+function parseAllowedOrigins(value) {
+  // Supports:
+  // - single origin: "https://example.com"
+  // - multiple origins: "https://a.com,https://b.com"
+  // - empty/undefined (falls back to CLIENT_ORIGIN)
+  const raw = String(value || '').trim();
+  if (!raw) return [CLIENT_ORIGIN];
+
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+const allowedOrigins = parseAllowedOrigins(process.env.CLIENT_ORIGINS);
+
+// Must be registered before any route that reads req.cookies
 app.use(cookieParser());
 
-// CORS (must allow credentials because client uses withCredentials:true)
 const corsConfig = {
-  origin: CLIENT_ORIGIN,
+  origin(origin, cb) {
+    // Allow server-to-server requests or tools that omit Origin
+    if (!origin) return cb(null, true);
+
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+
+    return cb(new Error(`CORS blocked for origin: ${origin}`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
 app.use(cors(corsConfig));
-
-// Preflight
 app.options(/.*/, cors(corsConfig));
 
 app.use(express.json());
 
-/**
- * ✅ Serve uploaded files
- * Multer saves into: <server working dir>/uploads/vehicles/:id/...
- * Public URL: http://localhost:4000/uploads/vehicles/:id/<filename>
- */
+// Static hosting for uploaded vehicle images/files
 const uploadsDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/uploads', express.static(uploadsDir));
 
-// quick sanity checks
+// Health endpoints
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, message: "Ol' Time Muscle API is alive" });
+  res.json({
+    ok: true,
+    service: 'ol-time-muscle-api',
+    env: NODE_ENV,
+  });
 });
 
 app.get('/api/health/db', async (_req, res) => {
@@ -58,35 +79,23 @@ app.get('/api/health/db', async (_req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('DB health check failed:', err);
-    res.status(500).json({ ok: false, error: err?.message || 'DB check failed' });
+    res.status(500).json({ ok: false, error: 'DB check failed' });
   }
 });
 
-// mount routers
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
-
-// eras = left dropdown (1960s, 1970s, etc)
 app.use('/api/eras', erasRoutes);
-
-// vehicles list + detail
 app.use('/api/vehicles', vehiclesRoutes);
-
-// comments + replies thread
 app.use('/api/comments', commentsRoutes);
-
-// keep categories ONLY if you still use it anywhere.
-// if you fully switched to eras, you can remove this later.
 app.use('/api/categories', categoriesRoutes);
 
 app.listen(PORT, async () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log('CLIENT_ORIGIN:', CLIENT_ORIGIN);
-  console.log('Uploads served from:', uploadsDir);
-  console.log('DB_HOST:', process.env.DB_HOST);
-  console.log('DB_PORT:', process.env.DB_PORT);
-  console.log('DB_USER:', process.env.DB_USER);
-  console.log('DB_NAME:', process.env.DB_NAME);
+  console.log(`✅ API listening on port ${PORT}`);
+  console.log('ENV:', NODE_ENV);
+  console.log('Allowed origins:', allowedOrigins.join(', '));
+  console.log('Uploads dir:', uploadsDir);
 
   await testDB();
 });

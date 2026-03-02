@@ -74,7 +74,7 @@ export default function Vehicles() {
         const list = Array.isArray(rows) ? rows : [];
         setEras(list);
 
-        // Academic-safe default: start with "All Eras" to prevent accidental era mismatches/leaks.
+        // Start with "All Eras" to prevent accidental era mismatches/leaks.
         // Users can then pick a specific era intentionally.
         setSelectedEraId('');
       } catch (err) {

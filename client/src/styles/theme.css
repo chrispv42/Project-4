@@ -113,7 +113,7 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 22px 8px 22px 8px;
+  border-radius: inherit;
   background: linear-gradient(135deg, var(--w14), transparent 35%, var(--r08));
   pointer-events: none;
   mask: linear-gradient(#000000, transparent 65%);
@@ -126,10 +126,7 @@ body {
   border-radius: 22px !important;
 }
 
-.login-card::before {
-  border-radius: 22px !important;
-}
-
+.login-card::before,
 .panel-card,
 .panel-card::before {
   border-radius: 22px !important;
@@ -515,14 +512,17 @@ body {
   text-transform: uppercase;
 }
 
-.thread-form {
-  display: flex;
-  flex-direction: column;
+.thread-form,
+.thread-replyComposer {
+  display: grid;
   gap: 16px;
-  padding: 16px;
-  border-radius: 18px;
   border: 1px solid var(--w14);
   background: linear-gradient(180deg, var(--w06), var(--w03));
+}
+
+.thread-form {
+  padding: 16px;
+  border-radius: 18px;
 }
 
 .thread-actions {
@@ -537,9 +537,9 @@ body {
 }
 
 .thread-list {
+  margin-top: 8px;
   display: grid;
   gap: 16px;
-  margin-top: 8px;
 }
 
 .thread-item {
@@ -555,44 +555,43 @@ body {
 }
 
 .thread-head {
+  margin-bottom: 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  margin-bottom: 8px;
 }
 
 .thread-user {
   font-weight: 600;
 }
 
-.thread-time {
+.thread-time,
+.thread-replyCount,
+.thread-replyBtn {
   font-size: 12px;
 }
 
 .thread-body {
+  margin: 2px 0 10px;
   line-height: 1.55;
   white-space: pre-wrap;
-  margin-top: 2px;
-  margin-bottom: 10px;
 }
 
 .thread-foot {
+  margin-top: 6px;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
   gap: 14px;
-  margin-top: 6px;
 }
 
 .thread-replyBtn {
+  cursor: pointer;
   border: 1px solid var(--w18);
   background: linear-gradient(180deg, var(--w08), var(--w04));
   color: var(--text);
   border-radius: 12px;
   padding: 7px 10px;
-  font-size: 12px;
-  cursor: pointer;
   box-shadow: 0 10px 26px var(--ink45);
 }
 
@@ -602,17 +601,11 @@ body {
     0 0 0 2px var(--r10);
 }
 
-.thread-replyCount {
-  font-size: 12px;
-}
-
 .thread-replyComposer {
   margin-top: 12px;
-  display: grid;
-  gap: 12px;
   padding: 12px;
   border-radius: 16px;
-  border: 1px solid var(--w14);
+  gap: 12px;
   background: linear-gradient(180deg, var(--w05), var(--w03));
 }
 
