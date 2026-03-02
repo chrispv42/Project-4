@@ -20,41 +20,46 @@ const app = express();
 const PORT = Number(process.env.PORT || 4000);
 const NODE_ENV = String(process.env.NODE_ENV || 'development').trim();
 
-const CLIENT_ORIGIN = String(process.env.CLIENT_ORIGIN || 'http://localhost:3000')
-  .trim()
-  .replace(/\/$/, '');
-
-function parseAllowedOrigins(value) {
-  const raw = String(value || '').trim();
-
-  // If CLIENT_ORIGINS is not set, fall back to CLIENT_ORIGIN (single origin).
-  const list = raw
-    ? raw
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : [CLIENT_ORIGIN];
-
-  // Normalize: remove trailing slash to match browser Origin format
-  return [...new Set(list.map((s) => String(s).replace(/\/$/, '')))];
+function normalizeOrigin(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\/$/, '');
 }
 
-// Supports either:
-// CLIENT_ORIGINS="http://localhost:3000,https://chrispv42.github.io"
-// or just CLIENT_ORIGIN="http://localhost:3000"
-const allowedOrigins = parseAllowedOrigins(process.env.CLIENT_ORIGINS || process.env.CLIENT_ORIGIN);
+function parseAllowedOrigins() {
+  const rawList = String(process.env.CLIENT_ORIGINS || '').trim();
+  const single = normalizeOrigin(process.env.CLIENT_ORIGIN || 'http://localhost:3000');
 
+  const list = rawList
+    ? rawList
+        .split(',')
+        .map((s) => normalizeOrigin(s))
+        .filter(Boolean)
+    : [single];
+
+  // Ensure unique
+  return [...new Set(list)];
+}
+
+const allowedOrigins = parseAllowedOrigins();
+
+// Must be registered before any route that reads req.cookies
 app.use(cookieParser());
 
 const corsConfig = {
   origin(origin, cb) {
-    // Allow requests that omit Origin (curl, server-to-server, health checks, etc.)
+    // Requests without Origin (curl/health checks) should pass
     if (!origin) return cb(null, true);
 
-    const normalized = String(origin).replace(/\/$/, '');
+    const normalized = normalizeOrigin(origin);
 
     if (allowedOrigins.includes(normalized)) return cb(null, true);
 
+    // Helpful debug: shows exactly what the browser sent
+    // eslint-disable-next-line no-console
+    console.warn('CORS blocked origin:', normalized, 'Allowed:', allowedOrigins);
+
+    // Returning false means no CORS headers will be set (browser will block)
     return cb(null, false);
   },
   credentials: true,
@@ -65,7 +70,7 @@ const corsConfig = {
 
 app.use(cors(corsConfig));
 
-// IMPORTANT: use regex here (Express + path-to-regexp compatibility)
+// Express + path-to-regexp safe preflight handler
 app.options(/.*/, cors(corsConfig));
 
 app.use(express.json({ limit: '1mb' }));
