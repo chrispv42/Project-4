@@ -18,46 +18,57 @@ import erasRoutes from './routes/eras.routes.js';
 const app = express();
 
 const PORT = Number(process.env.PORT || 4000);
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:3000';
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const NODE_ENV = String(process.env.NODE_ENV || 'development').trim();
+
+const CLIENT_ORIGIN = String(process.env.CLIENT_ORIGIN || 'http://localhost:3000')
+  .trim()
+  .replace(/\/$/, '');
 
 function parseAllowedOrigins(value) {
-  // Supports:
-  // - single origin: "https://example.com"
-  // - multiple origins: "https://a.com,https://b.com"
-  // - empty/undefined (falls back to CLIENT_ORIGIN)
   const raw = String(value || '').trim();
-  if (!raw) return [CLIENT_ORIGIN];
 
-  return raw
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
+  // If CLIENT_ORIGINS is not set, fall back to CLIENT_ORIGIN (single origin).
+  const list = raw
+    ? raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [CLIENT_ORIGIN];
+
+  // Normalize: remove trailing slash to match browser Origin format
+  return [...new Set(list.map((s) => String(s).replace(/\/$/, '')))];
 }
 
-const allowedOrigins = parseAllowedOrigins(process.env.CLIENT_ORIGINS);
+// Supports either:
+// CLIENT_ORIGINS="http://localhost:3000,https://chrispv42.github.io"
+// or just CLIENT_ORIGIN="http://localhost:3000"
+const allowedOrigins = parseAllowedOrigins(process.env.CLIENT_ORIGINS || process.env.CLIENT_ORIGIN);
 
-// Must be registered before any route that reads req.cookies
 app.use(cookieParser());
 
 const corsConfig = {
   origin(origin, cb) {
-    // Allow server-to-server requests or tools that omit Origin
+    // Allow requests that omit Origin (curl, server-to-server, health checks, etc.)
     if (!origin) return cb(null, true);
 
-    if (allowedOrigins.includes(origin)) return cb(null, true);
+    const normalized = String(origin).replace(/\/$/, '');
 
-    return cb(new Error(`CORS blocked for origin: ${origin}`));
+    if (allowedOrigins.includes(normalized)) return cb(null, true);
+
+    return cb(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
 };
 
 app.use(cors(corsConfig));
+
+// IMPORTANT: use regex here (Express + path-to-regexp compatibility)
 app.options(/.*/, cors(corsConfig));
 
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 // Static hosting for uploaded vehicle images/files
 const uploadsDir = path.join(process.cwd(), 'uploads');
