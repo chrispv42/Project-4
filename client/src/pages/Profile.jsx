@@ -8,6 +8,7 @@ import { api } from '../app/api';
 
 export default function Profile() {
   const navigate = useNavigate();
+
   const [me, setMe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState(null);
@@ -15,7 +16,7 @@ export default function Profile() {
   useEffect(() => {
     let alive = true;
 
-    async function loadMe() {
+    async function loadProfile() {
       setLoading(true);
       setErrMsg(null);
 
@@ -31,33 +32,44 @@ export default function Profile() {
         setMe(user);
       } catch (err) {
         if (!alive) return;
-        setErrMsg(err.message || 'Failed to load profile.');
+        setErrMsg(err?.message || 'Failed to load profile.');
       } finally {
         if (alive) setLoading(false);
       }
     }
 
-    loadMe();
+    loadProfile();
     return () => {
       alive = false;
     };
   }, [navigate]);
 
-  const createdLabel = useMemo(() => {
-    if (!me?.created_at) return null;
+  async function onLogout() {
     try {
-      return new Date(me.created_at).toLocaleString();
+      await api('/api/auth/logout', { method: 'POST' });
     } catch {
-      return String(me.created_at);
+      // If the API is unavailable, still force a logout UX.
+    } finally {
+      navigate('/login', { replace: true });
+    }
+  }
+
+  const createdLabel = useMemo(() => {
+    const ts = me?.created_at;
+    if (!ts) return null;
+
+    try {
+      return new Date(ts).toLocaleString();
+    } catch {
+      return String(ts);
     }
   }, [me]);
 
   return (
     <div className="app-shell">
-      <TopBar title="Profile" user={me} />
+      <TopBar title="Profile" user={me} onLogout={onLogout} />
 
       <div className="app-row">
-        {/*Tip only on Profile*/}
         <SideBar showTip />
 
         <div className="content-area">
@@ -69,7 +81,6 @@ export default function Profile() {
               alignItems: 'start',
             }}
           >
-            {/* Profile card */}
             <ChromeCard className="panel-card" style={{ padding: 18 }}>
               <h2 style={{ marginTop: 0 }}>Your Profile</h2>
 
@@ -85,12 +96,14 @@ export default function Profile() {
                     <div>{me.username}</div>
                   </div>
 
-                  <div>
-                    <div className="muted" style={{ fontSize: 12 }}>
-                      Email
+                  {me.email ? (
+                    <div>
+                      <div className="muted" style={{ fontSize: 12 }}>
+                        Email
+                      </div>
+                      <div>{me.email}</div>
                     </div>
-                    <div>{me.email}</div>
-                  </div>
+                  ) : null}
 
                   {createdLabel ? (
                     <div>
@@ -104,12 +117,11 @@ export default function Profile() {
               ) : null}
             </ChromeCard>
 
-            {/* Add Vehicle CTA card */}
             <ChromeCard className="panel-card" style={{ padding: 18 }}>
               <h2 style={{ marginTop: 0, marginBottom: 6 }}>Garage</h2>
 
               <p className="muted" style={{ marginTop: 6, lineHeight: 1.4 }}>
-                Add your first ride and it’ll instantly show up under its era on the Vehicles page.
+                Add your first ride and it will show up under its era on the Vehicles page.
               </p>
 
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
@@ -121,7 +133,6 @@ export default function Profile() {
                   Browse Vehicles
                 </Link>
               </div>
-
             </ChromeCard>
           </div>
         </div>

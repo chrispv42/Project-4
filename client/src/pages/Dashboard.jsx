@@ -8,6 +8,7 @@ import { api } from '../app/api';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+
   const [me, setMe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState(null);
@@ -15,7 +16,7 @@ export default function Dashboard() {
   useEffect(() => {
     let alive = true;
 
-    async function loadMe() {
+    async function loadSession() {
       setLoading(true);
       setErrMsg(null);
 
@@ -37,7 +38,7 @@ export default function Dashboard() {
       }
     }
 
-    loadMe();
+    loadSession();
     return () => {
       alive = false;
     };
@@ -47,18 +48,20 @@ export default function Dashboard() {
     try {
       await api('/api/auth/logout', { method: 'POST' });
     } catch {
-      // even if logout fails, still kick them out
+      // If the server is unavailable, still force a logout UX.
     } finally {
       navigate('/login', { replace: true });
     }
   }
 
   const createdLabel = useMemo(() => {
-    if (!me?.created_at) return null;
+    const ts = me?.created_at;
+    if (!ts) return null;
+
     try {
-      return new Date(me.created_at).toLocaleString();
+      return new Date(ts).toLocaleString();
     } catch {
-      return String(me.created_at);
+      return String(ts);
     }
   }, [me]);
 
@@ -74,24 +77,26 @@ export default function Dashboard() {
             <h2 style={{ marginTop: 0, marginBottom: 6 }}>Welcome back</h2>
 
             {loading ? (
-              <p style={{ color: 'var(--muted)', marginTop: 6 }}>Loading session…</p>
+              <p className="muted" style={{ marginTop: 6 }}>
+                Loading session…
+              </p>
             ) : null}
 
             {errMsg ? <p className="field-error">{errMsg}</p> : null}
 
             {!loading && me ? (
-              <p style={{ color: 'var(--muted)', marginTop: 6, marginBottom: 0 }}>
+              <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
                 Signed in as <span style={{ color: 'var(--text)' }}>{me.username}</span>
                 {me.email ? (
                   <>
                     {' '}
-                    <span style={{ color: 'var(--muted)' }}>•</span> {me.email}
+                    <span aria-hidden="true">•</span> {me.email}
                   </>
                 ) : null}
                 {createdLabel ? (
                   <>
                     {' '}
-                    <span style={{ color: 'var(--muted)' }}>•</span> created {createdLabel}
+                    <span aria-hidden="true">•</span> created {createdLabel}
                   </>
                 ) : null}
               </p>

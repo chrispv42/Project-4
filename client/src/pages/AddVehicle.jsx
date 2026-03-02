@@ -4,9 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import TopBar from '../components/TopBar';
 import SideBar from '../components/SideBar';
 import ChromeCard from '../components/ChromeCard';
-import { api } from '../app/api';
-
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:4000';
+import { api, http } from '../app/api';
 
 export default function AddVehicle() {
   const navigate = useNavigate();
@@ -122,32 +120,18 @@ export default function AddVehicle() {
 
     const fd = new FormData();
     fd.append('file', imageFile);
-    if (String(form.imageCaption || '').trim()) {
-      fd.append('caption', String(form.imageCaption).trim());
-    }
 
-    const token = localStorage.getItem('otm_token');
+    const caption = String(form.imageCaption || '').trim();
+    if (caption) fd.append('caption', caption);
 
-    const res = await fetch(`${API_BASE}/api/vehicles/${vehicleId}/photos/upload`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      body: fd,
-    });
-
-    let data = null;
     try {
-      data = await res.json();
-    } catch {
-      // ignore
-    }
-
-    if (!res.ok) {
-      const msg = data?.error || `Upload failed (${res.status})`;
+      const res = await http.post(`/api/vehicles/${vehicleId}/photos/upload`, fd);
+      return res.data;
+    } catch (err) {
+      const payload = err?.response?.data;
+      const msg = payload?.error || payload?.message || err?.message || 'Upload failed';
       throw new Error(msg);
     }
-
-    return data;
   }
 
   async function onSubmit(e) {
@@ -186,25 +170,23 @@ export default function AddVehicle() {
 
       const created = await api('/api/vehicles', {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body: payload,
       });
 
       const newId = created?.id;
       if (!newId) throw new Error('Vehicle created, but no id returned.');
 
-      // 1) Upload file (preferred)
       if (imageFile) {
         await uploadImage(newId);
       } else {
-        // 2) Fallback: add photo by URL
         const url = String(form.imageUrl || '').trim();
         if (url) {
           await api(`/api/vehicles/${newId}/photos`, {
             method: 'POST',
-            body: JSON.stringify({
+            body: {
               url,
               caption: String(form.imageCaption || '').trim() || null,
-            }),
+            },
           });
         }
       }
@@ -259,7 +241,6 @@ export default function AddVehicle() {
             ) : null}
 
             <form onSubmit={onSubmit} style={{ display: 'grid', gap: 14, marginTop: 10 }}>
-              {/* Era */}
               <div style={{ display: 'grid', gap: 6 }}>
                 <label className="muted" style={{ fontSize: 12 }} htmlFor="eraId">
                   Era
@@ -292,7 +273,6 @@ export default function AddVehicle() {
                 ) : null}
               </div>
 
-              {/* Core row */}
               <div
                 style={{
                   display: 'grid',
@@ -362,7 +342,6 @@ export default function AddVehicle() {
                 </div>
               </div>
 
-              {/* Specs */}
               <div
                 style={{
                   display: 'grid',
@@ -432,7 +411,6 @@ export default function AddVehicle() {
                 </div>
               </div>
 
-              {/* Notes */}
               <div style={{ display: 'grid', gap: 6 }}>
                 <label className="muted" style={{ fontSize: 12 }} htmlFor="notes">
                   Notes
@@ -448,7 +426,6 @@ export default function AddVehicle() {
                 />
               </div>
 
-              {/* Photo Upload + URL fallback */}
               <div
                 style={{
                   display: 'grid',

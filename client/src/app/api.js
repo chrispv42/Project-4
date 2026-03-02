@@ -7,7 +7,6 @@ function normalizeBaseUrl(value) {
   const raw = String(value || '').trim();
   if (!raw) return '';
   if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-  // If someone pastes just the domain, make it valid.
   return `https://${raw}`;
 }
 
@@ -16,22 +15,22 @@ const envBase = normalizeBaseUrl(process.env.REACT_APP_API_BASE);
 const API_BASE =
   envBase || (process.env.NODE_ENV === 'production' ? PROD_API : 'http://localhost:4000');
 
-// Shows only in browser console, not in API responses.
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
   // eslint-disable-next-line no-console
   console.log('[API_BASE]', API_BASE);
 }
 
 const client = axios.create({
   baseURL: API_BASE,
-  withCredentials: true, // sends/receives auth cookie if server sets one
+  withCredentials: true,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// If there is also a token stored, send it too (works with server middleware).
+// If a token is present, include it on every request.
+// This complements cookie auth and works across different front-end origins.
 client.interceptors.request.use((config) => {
   const token = localStorage.getItem('otm_token');
   if (token) {
@@ -40,6 +39,9 @@ client.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Export the configured Axios client for direct Axios usage in pages.
+export const http = client;
 
 // Wrapper so pages can call api('/path', { method, body }) consistently.
 export async function api(path, options = {}) {

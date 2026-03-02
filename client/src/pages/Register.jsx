@@ -1,10 +1,8 @@
 // client/src/pages/Register.jsx
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import FieldError from '../components/fieldError';
-
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:4000';
+import { api } from '../app/api';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -14,7 +12,6 @@ export default function Register() {
   const [password, setPassword] = useState('');
 
   const [acceptTerms, setAcceptTerms] = useState(false);
-
   const [showPassword, setShowPassword] = useState(false);
 
   const [fieldErr, setFieldErr] = useState({});
@@ -28,21 +25,22 @@ export default function Register() {
     setIsSubmitting(true);
 
     try {
-      await axios.post(
-        `${API_BASE}/api/auth/register`,
-        { username, email, password, acceptTerms },
-        { withCredentials: true }
-      );
+      const res = await api('/api/auth/register', {
+        method: 'POST',
+        body: { username, email, password, acceptTerms },
+      });
+
+      if (res?.token) localStorage.setItem('otm_token', res.token);
 
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      const data = err?.response?.data;
+      // api() throws Error(message) but includes err.data
+      const data = err?.data;
 
-      // backend returns: { field: 'email', error: '...' }
       if (data?.field && data?.error) {
         setFieldErr((prev) => ({ ...prev, [data.field]: data.error }));
       } else {
-        setErrorMsg(data?.error || err.message || 'Register failed');
+        setErrorMsg(err?.message || 'Register failed');
       }
     } finally {
       setIsSubmitting(false);
@@ -113,13 +111,7 @@ export default function Register() {
               aria-pressed={showPassword}
               onClick={() => setShowPassword((v) => !v)}
             >
-              <svg
-                className="password-eye"
-                viewBox="0 0 24 24"
-                width="18"
-                height="18"
-                aria-hidden="true"
-              >
+              <svg className="password-eye" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                 <path
                   fill="currentColor"
                   d="M12 5c-5.5 0-9.6 4.1-11 7 1.4 2.9 5.5 7 11 7s9.6-4.1 11-7c-1.4-2.9-5.5-7-11-7Zm0 12c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5Zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"
@@ -130,15 +122,8 @@ export default function Register() {
 
           <FieldError className="login-error" message={fieldErr.password} />
 
-          <label
-            className="login-label"
-            style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}
-          >
-            <input
-              type="checkbox"
-              checked={acceptTerms}
-              onChange={(e) => setAcceptTerms(e.target.checked)}
-            />
+          <label className="login-label" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+            <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} />
             I accept the terms
           </label>
           <FieldError className="login-error" message={fieldErr.acceptTerms} />

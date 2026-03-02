@@ -1,19 +1,5 @@
-import { useNavigate } from 'react-router-dom';
-import { api } from '../app/api';
-
-export default function TopBar({ title = "Ol' Time Muscle", user }) {
-  const navigate = useNavigate();
-
-  async function onLogout() {
-    try {
-      await api('/api/auth/logout', { method: 'POST' });
-    } catch {
-      // even if it fails, still force logout UX
-    } finally {
-      navigate('/login', { replace: true });
-    }
-  }
-
+// client/src/components/TopBar.jsx
+export default function TopBar({ title = "Ol' Time Muscle", user, onLogout }) {
   const logoSrc = `${process.env.PUBLIC_URL}/brandMark.png`;
 
   return (
@@ -24,16 +10,17 @@ export default function TopBar({ title = "Ol' Time Muscle", user }) {
           src={logoSrc}
           alt="Brand"
           onError={(e) => {
-            console.warn('TopBar logo failed to load:', logoSrc);
             e.currentTarget.style.display = 'none';
           }}
         />
 
         <div className="topbar-meta">
           <div className="topbar-title">{title}</div>
+
           {user ? (
             <div className="topbar-sub">
-              {user.username} • {user.email}
+              {user.username}
+              {user.email ? ` • ${user.email}` : ''}
             </div>
           ) : (
             <div className="topbar-sub">Loading session…</div>
@@ -41,9 +28,12 @@ export default function TopBar({ title = "Ol' Time Muscle", user }) {
         </div>
       </div>
 
-      <button className="chrome-btn topbar-logout" type="button" onClick={onLogout}>
-        Logout
-      </button>
+      {/* Logout only appears when a handler is explicitly provided AND a user exists */}
+      {user && typeof onLogout === 'function' ? (
+        <button className="chrome-btn topbar-logout" type="button" onClick={onLogout}>
+          Logout
+        </button>
+      ) : null}
     </header>
   );
 }

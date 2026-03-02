@@ -4,9 +4,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import TopBar from '../components/TopBar';
 import SideBar from '../components/SideBar';
 import ChromeCard from '../components/ChromeCard';
-import { api } from '../app/api';
-
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:4000';
+import { api, http } from '../app/api';
 
 function formatWhen(ts) {
   try {
@@ -23,6 +21,22 @@ function countThread(list) {
     if (c?.replies?.length) n += countThread(c.replies);
   }
   return n;
+}
+
+function resolveImg(url) {
+  const raw = String(url || '').trim();
+  if (!raw) return '';
+
+  // Absolute URL already
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+
+  // API provides relative like "/uploads/..."
+  if (raw.startsWith('/')) {
+    const base = String(http?.defaults?.baseURL || '').replace(/\/+$/, '');
+    return base ? `${base}${raw}` : raw;
+  }
+
+  return raw;
 }
 
 const ThreadItem = React.memo(function ThreadItem({
@@ -144,12 +158,6 @@ export default function VehicleDetail() {
   }, [vehicle, id]);
 
   const totalCount = useMemo(() => countThread(comments), [comments]);
-
-  function resolveImg(url) {
-    if (!url) return '';
-    if (url.startsWith('/')) return `${API_BASE}${url}`;
-    return url;
-  }
 
   const refreshComments = useCallback(async () => {
     const c = await api(`/api/comments/thread/by-vehicle/${id}`);

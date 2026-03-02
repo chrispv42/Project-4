@@ -1,9 +1,7 @@
 // client/src/pages/Login.jsx
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:4000';
+import { api } from '../app/api';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -20,15 +18,17 @@ export default function Login() {
     setIsSubmitting(true);
 
     try {
-      await axios.post(
-        `${API_BASE}/api/auth/login`,
-        { identifier, password },
-        { withCredentials: true }
-      );
+      const res = await api('/api/auth/login', {
+        method: 'POST',
+        body: { identifier, password },
+      });
+
+      // Server returns token (and also sets cookie). Store token for Bearer auth.
+      if (res?.token) localStorage.setItem('otm_token', res.token);
 
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setErrorMsg(err?.response?.data?.error || err.message || 'Login failed');
+      setErrorMsg(err?.message || 'Login failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -45,7 +45,6 @@ export default function Login() {
             src={`${process.env.PUBLIC_URL}/brandMark.png`}
             alt="Brand Mark"
             onError={(e) => {
-              // Fallback for weird deploy bases
               e.currentTarget.src = './brandMark.png';
             }}
           />

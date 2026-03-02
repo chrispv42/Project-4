@@ -4,9 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import TopBar from '../components/TopBar';
 import SideBar from '../components/SideBar';
 import ChromeCard from '../components/ChromeCard';
-import { api } from '../app/api';
-
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:4000';
+import { api, http } from '../app/api';
 
 export default function Vehicles() {
   const navigate = useNavigate();
@@ -74,8 +72,7 @@ export default function Vehicles() {
         const list = Array.isArray(rows) ? rows : [];
         setEras(list);
 
-        // Start with "All Eras" to prevent accidental era mismatches/leaks.
-        // Users can then pick a specific era intentionally.
+        // Default to "All Eras" so users intentionally choose a filter
         setSelectedEraId('');
       } catch (err) {
         if (!alive) return;
@@ -100,12 +97,9 @@ export default function Vehicles() {
       setErrMsg(null);
 
       try {
-        // Default "All Eras" = fetch everything.
-        // This avoids showing the wrong era under a selected label
-        // if era IDs/slugs ever drift or seed data is incomplete.
         const endpoint = selectedEraId ? `/api/vehicles/by-era/${selectedEraId}` : '/api/vehicles';
-
         const rows = await api(endpoint);
+
         if (!alive) return;
         setVehicles(Array.isArray(rows) ? rows : []);
       } catch (err) {
@@ -149,9 +143,20 @@ export default function Vehicles() {
   }, [selectedEraId, selectedEra]);
 
   function resolveImg(url) {
-    if (!url) return '';
-    if (url.startsWith('/')) return `${API_BASE}${url}`;
-    return url;
+    const raw = String(url || '').trim();
+    if (!raw) return '';
+
+    // Absolute URL already (http/https)
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+
+    // API provides relative like "/uploads/..."
+    if (raw.startsWith('/')) {
+      const base = String(http?.defaults?.baseURL || '').replace(/\/+$/, '');
+      return base ? `${base}${raw}` : raw;
+    }
+
+    // Fallback: treat as given
+    return raw;
   }
 
   return (
@@ -180,8 +185,7 @@ export default function Vehicles() {
                 <div className="callout-title">Request failed</div>
                 <div className="callout-body">{errMsg}</div>
                 <div className="callout-hint">
-                  Make sure <code>/api/eras</code> and <code>/api/vehicles</code> (and optionally{' '}
-                  <code>/api/vehicles/by-era/:id</code>) are mounted.
+                  Verify API routes are reachable and CORS allows your GitHub Pages origin.
                 </div>
               </div>
             ) : null}
